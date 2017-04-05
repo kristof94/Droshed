@@ -1,0 +1,72 @@
+
+Projet Droshed
+
+L'objectif du projet Droshed (DRoid SHeet EDitor) est de réaliser une application Android chargée d'éditer des feuilles de calcul en deux dimensions en communication avec un serveur web fournissant le modèle des feuilles et stockant les feuilles remplies.
+Modèle d'une feuille de calcul
+
+La définition des deux dimensions d'une feuille de calcul est fournie par un fichier XML dont vous devrez définir le format et qui sera hébergé sur un serveur web.
+
+Pour cette première dimension, nous spécifions l'intitulé de chacun des éléments ainsi que le type de données attendues. Par exemple, si nous souhaitons proposer un modèle de feuille de calcul pour noter ce projet (ceci est juste un exemple, cela ne préjuge pas de la facon dont sera noté ce projet), nous pourrions définir la première dimension avec les éléments qui suivent :
+
+    Démonstration lors de la soutenance (demo) : entier entre 0 et 20
+    Commentaires du code (comment): flottant entre 0 et 1
+    Qualité architecturale du code (archi) : entier entre 0 et 20
+    Documentation (doc) : entier entre 0 et 20
+    Etendue des fonctionnalités implantées (func) : flottant entre 0 et 1
+    Remarques diverses (rem) : texte
+    Captures d'écran (capt) : contenu libre
+    Note finale (grade) : formule ((demo * 3 + comment * 20 * 1 + archi * 1,5 + doc * 1,5 + func * 20 * 3) / 10)
+
+L'intitulé de l'élément est une chaîne libre. On associe également une chaîne d'identification (ici entre-parenthèses) pour référencer facilement chaque élément. L'intitulé pourra être modifié sur le modèle ; en revanche, l'identificateur doit rester immuable.
+
+Le type de chaque élement est défini parmi les types suivants :
+
+    Entier compris dans un intervalle donné
+    Flottant compris dans un intervalle donné
+    Formule mathématique faisant référence à d'autres champs (on supportera les quatre opérations arithmétiques principales)
+    Contenu libre
+
+Le type "contenu libre" représente du texte qui peut embarquer des données multimédia telles que des photos en son sein. Ce type est néanmoins facultatif et ne doit être implanté que dans un dernier temps lorsque l'application est opérationnelle. Il faut ainsi réfléchir à la façon dont ces données peuvent être acquises (par exemple en utilisant la caméra de l'appareil, en traçant des schemas sur l'écran tactile...) et comment celles-ci peuvent être restituées dans le flux du XML.
+
+Le type "formule" est également d'implantation facultative.
+
+Les éléments de la seconde dimension sont également fournis dans le modèle (pour l'exemple cité ici cela serait des noms d'étudiants dont les projets doivent être évalués).
+
+L'utilisateur de l'application a la possibilité d'ajouter de nouveaux éléments de son choix pour la seconde dimension. En revanche, la première dimension est figée et le modèle fourni par le serveur web doit être respecté. Le serveur peut néanmoins proposer des mises à jour du modèle qui peuvent supprimer, ajouter voire déplacer des éléments de la première dimension. Pour un élément donné, l'intitulé peut être modifié mais pas l'identificateur ni le type.
+Vues de la feuille de calcul
+
+L'application doit proposer deux possibilités d'exploration de la feuille de calcul :
+
+    L'affichage global de la feuille de calcul sous la forme d'une grille de cellules. L'utilisateur doit avoir la possibilité d'affecter au choix chacune des dimensions pour les lignes ou les colonnes (transposition). L'échelle d'affichage de la feuille doit être adaptable par geste de pincement (zoom/dezoom). À des échelles importantes, l'activité peut ne pas pouvoir afficher d'un seul tenant la grille sur l'écran : l'utilisateur doit pouvoir se déplacer sur celle-ci par défilement horizontal et vertical.
+
+    L'affichage de toutes les cellules d'une ligne ou d'une colonne (opération de projection). En reprenant l'exemple précédent cela permettrait d'afficher les notes pour l'ensemble des critères de notation pour un projet donné ou alors toutes les notes données aux projets pour un critère donné.
+
+Dans les deux cas, les cellules doivent être éditables et les données entrées doivent respecter les types spécifiés dans le modèle.
+Stockage des données
+
+Dans un premier temps, l'application doit récupérer un modèle de feuille sur lequel l'utilisateur souhaite travailler. Le modèle est téléchargé depuis un serveur web. Il contient la spécification des dimensions mais également une URL qui sera contactée afin de soumettre le contenu rempli des cellules. L'utilisateur communique au serveur ses identifiants (login et mot de passe) pour récupérer la feuille. Il est possible que l'utilisateur ai déjà commencé à remplir ce modèle de feuille et que du contenu soit disponible sur le serveur : dans ce cas si l'application ne dispose pas du contenu en local, elle le récupérera.
+
+Lorsque l'utilisateur modifie des cellules, leur contenu est stocké localement par un moyen dont le choix est libre (fichier structuré, base de données SQLite...). A chaque modification de cellule est associé un numéro de version incrémenté. Les cellules de type formule ne peuvent pas être modifiées, ne sont pas stockées ni transmises au serveur : elles sont calculées à partir du contenu des autres cellules.
+
+Lorsque la connectivité réseau le permet, un service examine les dernières modifications et les transmet au serveur par une requête PUT en utilisant l'adresse spécifiée dans le modèle. Préalablement à cette requête PUT, nous réalisons une requête GET afin que le serveur nous indique la dernière version des données en sa possession. Ainsi nous lui enverrons ensuite uniquement les données modifiées depuis cette version.
+
+Il serait bien que l'application Android puisse gérer l'édition de plusieurs feuilles (en commutant d'une feuille à une autre tout en conservant les données en local de toutes les feuilles en cours d'édition).
+Contexte du projet
+
+Ce projet Android s'insère dans un cadre plus large afin de réaliser un système de notation de projets par plusieurs jurés. On peut ainsi envisager que chaque juré dispose d'une tablette, récupère le modèle de feuille de calcul et remplit cette feuille avec ses notes pour les différents critères. Le serveur consolide alors les feuilles remplies par les différents jurés afin de réaliser une notation globale des projets.
+
+Dans le cadre de l'implantation de l'éditeur de feuille Android, nous ne nous occuperons pas de toute la logique de traitement de données côté serveur. On utilisera une implantation "bête" du serveur qui se contente d'envoyer des fichiers modèles et enregistrer les modifications du contenu. On vous fournit à cet effet un serveur Python minimaliste utilisant le framework web Flask : pour comprendre son fonctionnement, il vous suffit de lire le code source. Vous avez le droit d'implanter votre propre serveur web si vous le souhaitez.
+
+Le format du modèle ainsi que des données échangées est libre mais doit être basé sur du XML. Il est conseillé d'utiliser la bibliothèque xmlpull livrée dans l'API standard Android pour traiter les fichiers XML.
+Modalités de rendu
+
+Le projet est à réaliser en binône ou trinôme. Le rendu fourni devra comporter les éléments suivants réunis dans une archive ZIP postée sur le module de rendu Moodle :
+
+    Le code-source Java commenté et l'ensemble des ressources nécessaires pour la compilation de l'APK
+    Le code-source d'un éventuel serveur web si vous n'utilisez pas le script Python de test fourni
+    Un fichier README indiquant brièvement en anglais comment utiliser votre projet
+    Un fichier LICENSE spécifiant la licence de distribution utilisée pour votre projet ; cette licence doit obligatoirement être de type Open Source
+    Un rapport de développement qu format PDF en anglais ou en français décrivant l'architecture du projet, les difficultés rencontrées, les moyens mis en oeuvre pour les surmonter ainsi que la répartition et l'organisation du travail
+    Un fichier décrivant le format XML utilisé pour la représentation du modèle ainsi que des données échangées
+
+    La date limite de rendu est fixée au samedi 27 mai à 23h59. Les soutenances auront lieu le lundi 29 mai après-midi.
