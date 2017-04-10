@@ -7,7 +7,8 @@ import android.os.SystemClock;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Created by master on 4/5/17.
+ * Created by kristof
+ on 4/5/17.
  */
 
 public class DroshedApplication extends Application {
@@ -15,7 +16,6 @@ public class DroshedApplication extends Application {
     @Override
     public void onCreate() {
         super.onCreate();
-        SystemClock.sleep(TimeUnit.SECONDS.toMillis(3));
     }
 
     @Override
