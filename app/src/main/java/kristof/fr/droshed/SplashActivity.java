@@ -11,7 +11,6 @@ import android.widget.TextView;
 public class SplashActivity extends AppCompatActivity {
 
     private final int SPLASH_DISPLAY_LENGTH = 3000;
-
     private TextView title;
 
     @Override
@@ -19,7 +18,7 @@ public class SplashActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_splash);
         title = (TextView) findViewById(R.id.title);
-        Typeface typeFace = Typeface.createFromAsset(getAssets(), "fonts/A little sunshine.ttf");
+        Typeface typeFace = Typeface.createFromAsset(getAssets(), getString(R.string.font));
         title.setTypeface(typeFace,Typeface.BOLD);
         title.setTextSize(TypedValue.COMPLEX_UNIT_SP, 30);
         new Handler().postDelayed(
