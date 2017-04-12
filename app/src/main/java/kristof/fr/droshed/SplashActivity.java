@@ -23,7 +23,7 @@ public class SplashActivity extends AppCompatActivity {
         title.setTextSize(TypedValue.COMPLEX_UNIT_SP, 30);
         new Handler().postDelayed(
                 ()->{
-                    Intent mainIntent = new Intent(SplashActivity.this, MainActivity.class);
+                    Intent mainIntent = new Intent(SplashActivity.this, LoginActivity.class);
                     startActivity(mainIntent);
                     finish();
                 }

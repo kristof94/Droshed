@@ -36,19 +36,27 @@ Now "http://example.com/project/data/lastversion" should return 43
 from functools import wraps
 from flask import Flask, request, make_response, Response
 
-import os, sys
+import os, sys, base64
 
 app = Flask(__name__)
 
 def authenticated(f):
+
     @wraps(f)
     def decorated(*args, **kwargs):
         auth = request.authorization
-        if not auth or app.config["users"].get(auth.username) != auth.password:
-            return Response('Authentication error', 401, {'WWW-Authenticate': 'Basic realm="Login Required"'})
+        if not auth or app.config['users'].get(auth.username) != auth.password:
+            return Response('Authentication error', 401,
+                            {app.config['users'
+                            ].get(auth.username): auth.password})
         return f(*args, **kwargs)
     return decorated
 
+
+@app.route("/login")
+@authenticated
+def checkAuthentifation():
+	return Response('Authentication Ok', 200, {'WWW-Authenticate': 'Basic realm="Login Required accepted"'})
 
 @app.route("/<sheetname>/model")
 @authenticated
@@ -116,4 +124,4 @@ if __name__ == "__main__":
 				users[login.strip()] = password.strip()
 		app.config["users"] = users
 		# run the server
-		app.run(port=port)
+		app.run(host="0.0.0.0",port=port)

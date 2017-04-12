@@ -22,7 +22,8 @@
 
     </android.support.v7.widget.Toolbar>
 
-    <include layout="@layout/content_main" />
+    <include layout="@layout/content_main"
+        android:id="@+id/include" />
 
     <android.support.design.widget.FloatingActionButton
         android:id="@+id/fab"
@@ -32,5 +33,21 @@
         android:layout_margin="@dimen/fab_margin"
         app:backgroundTint="?attr/colorBackgroundFloating"
         app:srcCompat="@android:drawable/ic_input_add" />
+
+    <TextView
+        android:id="@+id/textView2"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|end|left"
+
+        android:text="TextView" />
+
+    <TextView
+        android:id="@+id/textView3"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|end|right"
+
+        android:text="TextView" />
 
 </android.support.design.widget.CoordinatorLayout>
