@@ -3,7 +3,6 @@ package kristof.fr.droshed;
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.annotation.TargetApi;
-import android.app.Activity;
 import android.app.LoaderManager.LoaderCallbacks;
 import android.content.CursorLoader;
 import android.content.Intent;
@@ -19,16 +18,13 @@ import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.text.TextUtils;
 import android.util.Base64;
-import android.view.KeyEvent;
 import android.view.View;
-import android.view.View.OnClickListener;
 import android.view.inputmethod.EditorInfo;
 import android.widget.ArrayAdapter;
 import android.widget.AutoCompleteTextView;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.EditText;
-import android.widget.TextView;
 
 import java.io.BufferedInputStream;
 import java.io.IOException;
@@ -114,13 +110,6 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
         finish();
     }
 
-    private void populateAutoComplete() {
-        /*if (!mayRequestContacts()) {
-            return;
-        }*/
-
-        getLoaderManager().initLoader(0, null, this);
-    }
 
     /**
      * Attempts to sign in or register the account specified by the login form.
@@ -174,7 +163,7 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
             // perform the user login attempt.
             showProgress(true);
             mAuthTask = new UserLoginTask(user, password);
-            URL url = null;
+            URL url ;
             try {
                 url = new URL(mServerView.getText().toString()+getString(R.string.loginPath));
                 mAuthTask.execute(url);
@@ -271,14 +260,13 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
         };
 
         int ADDRESS = 0;
-        int IS_PRIMARY = 1;
     }
 
     /**
      * Represents an asynchronous login/registration task used to authenticate
      * the user.
      */
-    public class UserLoginTask extends AsyncTask<URL, String, Boolean> {
+    private class UserLoginTask extends AsyncTask<URL, String, Boolean> {
 
         private final String authBase64;
         private final String user;
