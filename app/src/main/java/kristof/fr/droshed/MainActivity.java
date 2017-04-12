@@ -9,8 +9,6 @@ import android.support.v7.widget.Toolbar;
 import android.util.TypedValue;
 import android.widget.TextView;
 
-import org.w3c.dom.Text;
-
 public class MainActivity extends AppCompatActivity {
 
     @Override

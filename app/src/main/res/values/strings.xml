@@ -15,5 +15,16 @@
     <string name="error_invalid_password">This password is too short</string>
     <string name="error_incorrect_password">This password is incorrect</string>
     <string name="error_field_required">This field is required</string>
+    <string name="alertConnexionProblem">"Problème de connexion, vérifier vos identifiants de connexion."</string>
+
+    <!-- Strings related to sharedPref-->
+    <string name="loginKey">login</string>
+    <string name="url">url</string>
+    <string name="username">username</string>
+    <string name="password">password</string>
+    <string name="loginPath">/login</string>
+    <string name="port">port</string>
+    <string name="credential">credential</string>
+    <string name="urlServer">urlServer</string>
 
 </resources>

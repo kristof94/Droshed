@@ -5,10 +5,10 @@ import android.animation.AnimatorListenerAdapter;
 import android.annotation.TargetApi;
 import android.app.Activity;
 import android.app.LoaderManager.LoaderCallbacks;
-import android.content.Context;
 import android.content.CursorLoader;
 import android.content.Intent;
 import android.content.Loader;
+import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.AsyncTask;
@@ -26,17 +26,15 @@ import android.view.inputmethod.EditorInfo;
 import android.widget.ArrayAdapter;
 import android.widget.AutoCompleteTextView;
 import android.widget.Button;
+import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.Authenticator;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
-import java.net.PasswordAuthentication;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
@@ -58,8 +56,8 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
     private EditText mServerView;
     private View mProgressView;
     private View mLoginFormView;
-    private Activity activity ;
     private View parentLayout;
+    private CheckBox checkBox;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -70,30 +68,50 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
         mEmailView = (AutoCompleteTextView) findViewById(R.id.email);
         //populateAutoComplete();
         mServerView = (EditText) findViewById(R.id.server);
-        mServerView.setText("http://192.168.1.88:4545");
+        checkBox = (CheckBox) findViewById(R.id.checkBox);
         mPasswordView = (EditText) findViewById(R.id.password);
-        mPasswordView.setOnEditorActionListener(new TextView.OnEditorActionListener() {
-            @Override
-            public boolean onEditorAction(TextView textView, int id, KeyEvent keyEvent) {
-                if (id == R.id.login || id == EditorInfo.IME_NULL) {
-                    attemptLogin();
-                    return true;
-                }
-                return false;
+        mPasswordView.setOnEditorActionListener((textView, id, keyEvent) -> {
+            if (id == R.id.login || id == EditorInfo.IME_NULL) {
+                attemptLogin();
+                return true;
             }
+            return false;
         });
 
         Button mEmailSignInButton = (Button) findViewById(R.id.email_sign_in_button);
-        mEmailSignInButton.setOnClickListener(new OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                attemptLogin();
-            }
-        });
+        mEmailSignInButton.setOnClickListener(view -> attemptLogin());
 
         mLoginFormView = findViewById(R.id.login_form);
         mProgressView = findViewById(R.id.login_progress);
-        activity = this;
+        SharedPreferences sp=this.getSharedPreferences(getString(R.string.loginKey),0);
+        if(sp.getAll().size()==3){
+            String url = sp.getString(getString(R.string.url),null);
+            String user = sp.getString(getString(R.string.username),null);
+            String password = sp.getString(getString(R.string.password),null);
+            mServerView.setText(url);
+            mEmailView.setText(user);
+            mPasswordView.setText(password);
+            checkBox.setChecked(true);
+        }
+
+    }
+
+    private void saveData(String url,String user, String password){
+            SharedPreferences sp = getSharedPreferences(getString(R.string.loginKey), 0);
+            SharedPreferences.Editor ed = sp.edit();
+            ed.putString(getString(R.string.url),url );
+            ed.putString(getString(R.string.username),user);
+            ed.putString(getString(R.string.password),password);
+            ed.apply();
+    }
+
+    private void startMainActivityAndExitLoginActivity(String url,int port,String credential) {
+        Intent mainIntent = new Intent(LoginActivity.this, MainActivity.class);
+        mainIntent.putExtra(getString(R.string.port),port);
+        mainIntent.putExtra(getString(R.string.credential),credential);
+        mainIntent.putExtra(getString(R.string.urlServer),url);
+        startActivity(mainIntent);
+        finish();
     }
 
     private void populateAutoComplete() {
@@ -158,7 +176,7 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
             mAuthTask = new UserLoginTask(user, password);
             URL url = null;
             try {
-                url = new URL(mServerView.getText().toString()+"/login");
+                url = new URL(mServerView.getText().toString()+getString(R.string.loginPath));
                 mAuthTask.execute(url);
             } catch (MalformedURLException e) {
                 e.printStackTrace();
@@ -262,19 +280,18 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
      */
     public class UserLoginTask extends AsyncTask<URL, String, Boolean> {
 
-        //private final String authBase64;
-        private final String username;
-        private final String password;
         private final String authBase64;
-        private Exception exception;
+        private final String user;
+        private final String password;
         private URL goodUrl;
 
         UserLoginTask(String username, String password) {
-            this.username = username;
+            this.user = username;
             this.password = password;
             String credentials = username +":"+password;
             this.authBase64 =  "Basic "+Base64.encodeToString(credentials.getBytes(), Base64.DEFAULT).replace("\n", "");
         }
+
 
         @Override
         protected Boolean doInBackground(URL... params) {
@@ -304,11 +321,12 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
             mAuthTask = null;
             showProgress(false);
             if (success) {
+                if(checkBox.isChecked()){
+                    saveData(mServerView.getText().toString(),this.user,this.password);
+                }
                 startMainActivityAndExitLoginActivity(goodUrl.getHost(),goodUrl.getPort(),this.authBase64);
             } else {
-                runOnUiThread(()-> {
-                    Snackbar.make(parentLayout,"Problème de connexion, vérifier vos identifiants de connexion.",Snackbar.LENGTH_SHORT).show();
-                });
+                runOnUiThread(()-> Snackbar.make(parentLayout,getString(R.string.alertConnexionProblem),Snackbar.LENGTH_SHORT).show());
             }
         }
 
@@ -317,15 +335,6 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
             mAuthTask = null;
             showProgress(false);
         }
-    }
-
-    private void startMainActivityAndExitLoginActivity(String url,int port,String credential) {
-        Intent mainIntent = new Intent(LoginActivity.this, MainActivity.class);
-        mainIntent.putExtra("port",port);
-        mainIntent.putExtra("credential",credential);
-        mainIntent.putExtra("urlServer",url);
-        startActivity(mainIntent);
-        finish();
     }
 }
 
