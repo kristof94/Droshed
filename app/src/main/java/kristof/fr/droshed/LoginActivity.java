@@ -5,6 +5,7 @@ import android.animation.AnimatorListenerAdapter;
 import android.annotation.TargetApi;
 import android.app.LoaderManager.LoaderCallbacks;
 import android.content.CursorLoader;
+import android.content.Intent;
 import android.content.Loader;
 import android.content.SharedPreferences;
 import android.database.Cursor;
@@ -100,12 +101,12 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
     }
 
     private void startMainActivityAndExitLoginActivity(String url,int port,String credential) {
-        /*Intent mainIntent = new Intent(LoginActivity.this, Main2Activity.class);
+        Intent mainIntent = new Intent(LoginActivity.this, MainActivity.class);
         mainIntent.putExtra(getString(R.string.portIntent),port);
         mainIntent.putExtra(getString(R.string.credentialIntent),credential);
         mainIntent.putExtra(getString(R.string.urlServerIntent),url);
-        startActivity(mainIntent);*/
-        //finish();
+        startActivity(mainIntent);
+        finish();
     }
 
 

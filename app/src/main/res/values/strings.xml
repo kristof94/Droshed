@@ -31,5 +31,10 @@
 
     <string name="navigation_drawer_open">Open navigation drawer</string>
     <string name="navigation_drawer_close">Close navigation drawer</string>
+    <string name="home">DashBoard</string>
 
+
+    <!-- Strings related to left side menu bar-->
+    <string name="data">Feuilles de calcul</string>
+    <string name="model">Modèles</string>
 </resources>
