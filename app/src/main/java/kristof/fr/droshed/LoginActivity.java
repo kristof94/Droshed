@@ -102,11 +102,11 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
     }
 
     private void startMainActivityAndExitLoginActivity(String url,int port,String credential) {
-        Intent mainIntent = new Intent(LoginActivity.this, MainActivity.class);
-        mainIntent.putExtra(getString(R.string.port),port);
-        mainIntent.putExtra(getString(R.string.credential),credential);
-        mainIntent.putExtra(getString(R.string.urlServer),url);
-        startActivity(mainIntent);
+        /*Intent mainIntent = new Intent(LoginActivity.this, Main2Activity.class);
+        mainIntent.putExtra(getString(R.string.portIntent),port);
+        mainIntent.putExtra(getString(R.string.credentialIntent),credential);
+        mainIntent.putExtra(getString(R.string.urlServerIntent),url);
+        startActivity(mainIntent);*/
         finish();
     }
 

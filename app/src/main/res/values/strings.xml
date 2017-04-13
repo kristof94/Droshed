@@ -23,8 +23,13 @@
     <string name="username">username</string>
     <string name="password">password</string>
     <string name="loginPath">/login</string>
-    <string name="port">port</string>
-    <string name="credential">credential</string>
-    <string name="urlServer">urlServer</string>
+
+    <string name="portIntent">port</string>
+    <string name="credentialIntent">credential</string>
+    <string name="urlServerIntent">urlServer</string>
+    <string name="title_activity_main2">Main2Activity</string>
+
+    <string name="navigation_drawer_open">Open navigation drawer</string>
+    <string name="navigation_drawer_close">Close navigation drawer</string>
 
 </resources>
