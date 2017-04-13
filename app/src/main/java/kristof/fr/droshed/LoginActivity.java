@@ -5,7 +5,6 @@ import android.animation.AnimatorListenerAdapter;
 import android.annotation.TargetApi;
 import android.app.LoaderManager.LoaderCallbacks;
 import android.content.CursorLoader;
-import android.content.Intent;
 import android.content.Loader;
 import android.content.SharedPreferences;
 import android.database.Cursor;
@@ -18,6 +17,7 @@ import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.text.TextUtils;
 import android.util.Base64;
+import android.util.Log;
 import android.view.View;
 import android.view.inputmethod.EditorInfo;
 import android.widget.ArrayAdapter;
@@ -26,9 +26,7 @@ import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.EditText;
 
-import java.io.BufferedInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -107,7 +105,7 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
         mainIntent.putExtra(getString(R.string.credentialIntent),credential);
         mainIntent.putExtra(getString(R.string.urlServerIntent),url);
         startActivity(mainIntent);*/
-        finish();
+        //finish();
     }
 
 
@@ -149,8 +147,8 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
         }
 
         if (TextUtils.isEmpty(ipServer)) {
-            mEmailView.setError(getString(R.string.error_field_required));
-            focusView = mEmailView;
+            mServerView.setError(getString(R.string.error_field_required));
+            focusView = mServerView;
             cancel = true;
         }
 
@@ -161,14 +159,16 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
         } else {
             // Show a progress spinner, and kick off a background task to
             // perform the user login attempt.
-            showProgress(true);
             mAuthTask = new UserLoginTask(user, password);
             URL url ;
             try {
                 url = new URL(mServerView.getText().toString()+getString(R.string.loginPath));
+                showProgress(true);
                 mAuthTask.execute(url);
             } catch (MalformedURLException e) {
-                e.printStackTrace();
+                Snackbar.make(parentLayout,getString(R.string.alertConnexionProblem),Snackbar.LENGTH_SHORT).show();
+                mAuthTask.cancel(true);
+                return;
             }
         }
     }
@@ -287,12 +287,17 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
                 HttpURLConnection urlConnection = null;
                 try {
                     urlConnection = (HttpURLConnection) url.openConnection();
+                    urlConnection.setConnectTimeout(3000); //set timeout to 3 seconds
+                    urlConnection.setReadTimeout(3000);
                     urlConnection.setRequestProperty("Authorization", authBase64);
-                    InputStream in = new BufferedInputStream(urlConnection.getInputStream());
-                    //readStream(in);
-                    in.close();
-                    goodUrl = url;
 
+                    urlConnection.setRequestMethod("GET");
+                    urlConnection.setDoInput(true);
+                    // Starts the query
+                    urlConnection.connect();
+                    int response = urlConnection.getResponseCode();
+                    Log.d("app", "The response is: " + response);
+                    goodUrl = url;
                     return true;
                 } catch (IOException e) {
                     e.printStackTrace();
@@ -309,6 +314,7 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
             mAuthTask = null;
             showProgress(false);
             if (success) {
+                runOnUiThread(()-> Snackbar.make(parentLayout,"Connexion OK!",Snackbar.LENGTH_SHORT).show());
                 if(checkBox.isChecked()){
                     saveData(mServerView.getText().toString(),this.user,this.password);
                 }
