@@ -34,9 +34,9 @@ Now "http://example.com/project/data/lastversion" should return 43
 """
 
 from functools import wraps
-from flask import Flask, request, make_response, Response
+from flask import Flask, request, make_response, Response, jsonify
 
-import os, sys, base64
+import os, sys, base64, glob
 
 app = Flask(__name__)
 
@@ -57,6 +57,27 @@ def authenticated(f):
 @authenticated
 def checkAuthentifation():
 	return Response('Authentication Ok', 200, {'WWW-Authenticate': 'Basic realm="Login Required accepted"'})
+
+@app.route("/model")
+@authenticated
+def getlistmodel():
+	return getlistfolder("model")
+
+@app.route("/data")
+@authenticated
+def getlistdata():
+	return getlistfolder("data")
+
+def getlistfolder(folder):
+	listdir = os.listdir(folder);
+	a = 0;
+	for file in listdir :
+		if file.endswith(".auth"):
+			listdir.pop(a)
+	a+=1
+	delimitedList = ",".join(listdir)
+	return jsonify(results=listdir)
+
 
 @app.route("/<sheetname>/model")
 @authenticated
