@@ -6,6 +6,8 @@
     android:layout_height="match_parent"
     app:layout_behavior="@string/appbar_scrolling_view_behavior"
     tools:context="kristof.fr.droshed.MainActivity"
+    tools:layout_editor_absoluteX="0dp"
+    tools:layout_editor_absoluteY="25dp"
     tools:showIn="@layout/app_bar_main">
 
 </android.support.constraint.ConstraintLayout>

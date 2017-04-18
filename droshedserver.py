@@ -36,9 +36,28 @@ Now "http://example.com/project/data/lastversion" should return 43
 from functools import wraps
 from flask import Flask, request, make_response, Response, jsonify
 
-import os, sys, base64, glob
+import os, sys, base64, glob, json
 
 app = Flask(__name__)
+
+class Item(object):
+    name = ""
+    version = 0
+
+    # The class "constructor" - It's actually an initializer 
+    def __init__(self, name, version):
+        self.name = name
+        self.version = version
+
+def make_item(name, version):
+    item = Item(name, version)
+    return item
+
+def item_tostring(item):
+    str = "{name:"
+    str+= item.name
+    str+= "}"
+    return str
 
 def authenticated(f):
 
@@ -70,13 +89,13 @@ def getlistdata():
 
 def getlistfolder(folder):
 	listdir = os.listdir(folder);
-	a = 0;
-	for file in listdir :
-		if file.endswith(".auth"):
-			listdir.pop(a)
-	a+=1
-	delimitedList = ",".join(listdir)
-	return jsonify(results=listdir)
+	itemList = ""
+	a = 1;
+	for i in range(0,len(listdir)):
+		if(listdir[i].endswith(".auth")==False):
+			item = make_item(listdir[i],0)
+			itemList += item_tostring(item)
+	return jsonify(results = itemList)
 
 
 @app.route("/<sheetname>/model")

@@ -1,7 +1,7 @@
 <resources>
     <string name="app_name">Droshed</string>
     <string name="title_activity_main">MainActivity</string>
-    <string name="action_settings">Settings</string>
+    <string name="action_settings">Refresh</string>
     <string name="font">fonts/RicksAmericanNF.ttf</string>
     <string name="title_activity_login">Sign in</string>
 
@@ -23,11 +23,6 @@
     <string name="username">username</string>
     <string name="password">password</string>
     <string name="loginPath">/login</string>
-
-    <string name="portIntent">port</string>
-    <string name="credentialIntent">credential</string>
-    <string name="urlServerIntent">urlServer</string>
-    <string name="title_activity_main2">Main2Activity</string>
 
     <string name="navigation_drawer_open">Open navigation drawer</string>
     <string name="navigation_drawer_close">Close navigation drawer</string>

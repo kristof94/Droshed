@@ -19,6 +19,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.text.TextUtils;
 import android.util.Base64;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.View;
 import android.view.inputmethod.EditorInfo;
 import android.widget.ArrayAdapter;
@@ -26,6 +27,7 @@ import android.widget.AutoCompleteTextView;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.EditText;
+import android.widget.TextView;
 
 import java.io.IOException;
 import java.net.HttpURLConnection;
@@ -65,16 +67,23 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
         mServerView = (EditText) findViewById(R.id.server);
         checkBox = (CheckBox) findViewById(R.id.checkBox);
         mPasswordView = (EditText) findViewById(R.id.password);
-        mPasswordView.setOnEditorActionListener((textView, id, keyEvent) -> {
-            if (id == R.id.login || id == EditorInfo.IME_NULL) {
-                attemptLogin();
-                return true;
+        mPasswordView.setOnEditorActionListener(new TextView.OnEditorActionListener() {
+            @Override
+            public boolean onEditorAction(TextView v, int id, KeyEvent event) {
+                if (id == R.id.login || id == EditorInfo.IME_NULL) {
+                    attemptLogin();
+                    return true;
+                }
+                return false;
             }
-            return false;
         });
-
         Button mEmailSignInButton = (Button) findViewById(R.id.email_sign_in_button);
-        mEmailSignInButton.setOnClickListener(view -> attemptLogin());
+        mEmailSignInButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                attemptLogin();
+            }
+        });
 
         mLoginFormView = findViewById(R.id.login_form);
         mProgressView = findViewById(R.id.login_progress);
@@ -101,10 +110,9 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
     }
 
     private void startMainActivityAndExitLoginActivity(String url,int port,String credential) {
+        ServerInfo serverInfo = new ServerInfo(port,credential,url);
         Intent mainIntent = new Intent(LoginActivity.this, MainActivity.class);
-        mainIntent.putExtra(getString(R.string.portIntent),port);
-        mainIntent.putExtra(getString(R.string.credentialIntent),credential);
-        mainIntent.putExtra(getString(R.string.urlServerIntent),url);
+        mainIntent.putExtra("serverInfo",serverInfo);
         startActivity(mainIntent);
         finish();
     }
@@ -315,13 +323,23 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
             mAuthTask = null;
             showProgress(false);
             if (success) {
-                runOnUiThread(()-> Snackbar.make(parentLayout,"Connexion OK!",Snackbar.LENGTH_SHORT).show());
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        Snackbar.make(parentLayout,"Connexion OK!",Snackbar.LENGTH_SHORT).show();
+                    }
+                });
                 if(checkBox.isChecked()){
                     saveData(mServerView.getText().toString(),this.user,this.password);
                 }
                 startMainActivityAndExitLoginActivity(goodUrl.getHost(),goodUrl.getPort(),this.authBase64);
             } else {
-                runOnUiThread(()-> Snackbar.make(parentLayout,getString(R.string.alertConnexionProblem),Snackbar.LENGTH_SHORT).show());
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        Snackbar.make(parentLayout,getString(R.string.alertConnexionProblem),Snackbar.LENGTH_SHORT).show();
+                    }
+                });
             }
         }
 
