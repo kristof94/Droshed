@@ -44,6 +44,10 @@ public class MainActivity extends AppCompatActivity
     private View parentLayout;
     private GridView gridView;
     private ProgressBar progressBar;
+    private boolean isModelView;
+    private ArrayList<CustomItem> datalist = new ArrayList<>();
+    private ArrayList<CustomItem> modelist = new ArrayList<>();
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -56,7 +60,6 @@ public class MainActivity extends AppCompatActivity
         parentLayout = findViewById(R.id.home);
         gridView = (GridView) findViewById(R.id.gridViewHome);
         progressBar = (ProgressBar) findViewById(R.id.progressBar);
-
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -90,8 +93,24 @@ public class MainActivity extends AppCompatActivity
             //TODO
             url = new URL(serverInfo + "/data");
             String result = userClientTask.execute(url).get();
-            ArrayList<CustomItem> list = JsonUtil.toObject(result);
-            CustomItemAdapter arrayAdapter = new CustomItemAdapter(this, list);
+            datalist = JsonUtil.toObject(result);
+            CustomItemAdapter arrayAdapter = new CustomItemAdapter(this, datalist);
+            gridView.setAdapter(arrayAdapter);
+        } catch (Exception e) {
+            Snackbar.make(parentLayout, "Impossible to retrieve data from server.", Snackbar.LENGTH_SHORT).show();
+        }
+        userClientTask.cancel(true);
+    }
+
+    private void refreshModelFromServer() {
+        UserClientTask userClientTask = new UserClientTask();
+        URL url = null;
+        try {
+            //TODO
+            url = new URL(serverInfo + "/model");
+            String result = userClientTask.execute(url).get();
+            datalist = JsonUtil.toObject(result);
+            CustomItemAdapter arrayAdapter = new CustomItemAdapter(this, datalist);
             gridView.setAdapter(arrayAdapter);
         } catch (Exception e) {
             Snackbar.make(parentLayout, "Impossible to retrieve data from server.", Snackbar.LENGTH_SHORT).show();
@@ -136,7 +155,11 @@ public class MainActivity extends AppCompatActivity
 
         //noinspection SimplifiableIfStatement
         if (id == R.id.refresh) {
-            refreshDataFromServer();
+            if (isModelView) {
+                refreshModelFromServer();
+            }else{
+                refreshDataFromServer();
+            }
             return true;
         }
 
@@ -150,9 +173,11 @@ public class MainActivity extends AppCompatActivity
         int id = item.getItemId();
 
         if (id == R.id.nav_data) {
-            // Handle the camera action
+            isModelView = false;
+            refreshDataFromServer();
         } else if (id == R.id.nav_model) {
-
+            isModelView = true;
+            refreshModelFromServer();
         }
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         drawer.closeDrawer(GravityCompat.START);
