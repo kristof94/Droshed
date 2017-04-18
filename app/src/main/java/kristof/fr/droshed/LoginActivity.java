@@ -323,12 +323,6 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
             mAuthTask = null;
             showProgress(false);
             if (success) {
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        Snackbar.make(parentLayout,"Connexion OK!",Snackbar.LENGTH_SHORT).show();
-                    }
-                });
                 if(checkBox.isChecked()){
                     saveData(mServerView.getText().toString(),this.user,this.password);
                 }

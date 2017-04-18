@@ -4,6 +4,7 @@ import android.content.Intent;
 import android.graphics.Typeface;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.PersistableBundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.text.TextUtils;
@@ -48,6 +49,16 @@ public class MainActivity extends AppCompatActivity
     private ArrayList<CustomItem> datalist = new ArrayList<>();
     private ArrayList<CustomItem> modelist = new ArrayList<>();
 
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        serverInfo.setDatalist(datalist);
+        serverInfo.setModelist(modelist);
+        outState.putBoolean("isModelView",isModelView);
+        outState.putSerializable("serverInfo",serverInfo);
+        super.onSaveInstanceState(outState);
+    }
+
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -78,10 +89,19 @@ public class MainActivity extends AppCompatActivity
         NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
 
-        Intent intent = getIntent();
-        if (intent != null) {
-            serverInfo = (ServerInfo) intent.getSerializableExtra("serverInfo");
-            System.out.println(serverInfo);
+        if(savedInstanceState!=null){
+            serverInfo = (ServerInfo) savedInstanceState.get("serverInfo");
+            isModelView = savedInstanceState.getBoolean("isModelView");
+        }else{
+            Intent intent = getIntent();
+            if (intent != null) {
+                serverInfo = (ServerInfo) intent.getSerializableExtra("serverInfo");
+            }
+        }
+
+        if(isModelView){
+            refreshModelFromServer();
+        }else{
             refreshDataFromServer();
         }
     }
