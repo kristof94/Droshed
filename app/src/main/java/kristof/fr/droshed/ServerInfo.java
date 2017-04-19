@@ -1,6 +1,8 @@
 package kristof.fr.droshed;
 
-import java.io.Serializable;
+import android.os.Parcel;
+import android.os.Parcelable;
+
 import java.util.ArrayList;
 
 /**
@@ -8,12 +10,45 @@ import java.util.ArrayList;
  * on 4/13/17.
  */
 
-public class ServerInfo implements Serializable {
+public class ServerInfo implements Parcelable {
 
     private int port;
     private String credentials;
     private String address;
     private ArrayList<CustomItem> datalist = new ArrayList<>();
+
+    protected ServerInfo(Parcel in) {
+        port = in.readInt();
+        credentials = in.readString();
+        address = in.readString();
+        ArrayList<CustomItem> list = new ArrayList<>();
+        in.readList(list,CustomItem.class.getClassLoader());
+    }
+
+    @Override
+    public void writeToParcel(Parcel dest, int flags) {
+        dest.writeInt(port);
+        dest.writeString(credentials);
+        dest.writeString(address);
+        dest.writeList(datalist);
+    }
+
+    @Override
+    public int describeContents() {
+        return 0;
+    }
+
+    public static final Creator<ServerInfo> CREATOR = new Creator<ServerInfo>() {
+        @Override
+        public ServerInfo createFromParcel(Parcel in) {
+            return new ServerInfo(in);
+        }
+
+        @Override
+        public ServerInfo[] newArray(int size) {
+            return new ServerInfo[size];
+        }
+    };
 
     public ArrayList<CustomItem> getDatalist() {
         return datalist;

@@ -43,7 +43,7 @@ public class MainActivity extends AppCompatActivity
         serverInfo.setDatalist(datalist);
         serverInfo.setModelist(modelist);
         outState.putBoolean("isModelView",isModelView);
-        outState.putSerializable("serverInfo",serverInfo);
+        outState.putParcelable("serverInfo",serverInfo);
         super.onSaveInstanceState(outState);
     }
 
@@ -84,7 +84,7 @@ public class MainActivity extends AppCompatActivity
         }else{
             Intent intent = getIntent();
             if (intent != null) {
-                serverInfo = (ServerInfo) intent.getSerializableExtra("serverInfo");
+                serverInfo = intent.getParcelableExtra("serverInfo");
             }
         }
 
