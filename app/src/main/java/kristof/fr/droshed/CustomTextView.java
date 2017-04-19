@@ -6,8 +6,6 @@ import android.support.annotation.Nullable;
 import android.util.AttributeSet;
 import android.widget.TextView;
 
-import org.w3c.dom.Attr;
-
 /**
  * Created by kristof
  * on 4/13/17.

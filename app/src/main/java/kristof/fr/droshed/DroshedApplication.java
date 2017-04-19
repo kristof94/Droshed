@@ -2,9 +2,6 @@ package kristof.fr.droshed;
 
 import android.app.Application;
 import android.content.res.Configuration;
-import android.os.SystemClock;
-
-import java.util.concurrent.TimeUnit;
 
 /**
  * Created by kristof
