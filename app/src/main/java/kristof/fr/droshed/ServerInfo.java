@@ -8,18 +8,22 @@ import java.util.ArrayList;
 /**
  * Created by kristof
  * on 4/13/17.
+ * ServerInfo class used to save data like credential(user+password),port, etc..
  */
 
 public class ServerInfo implements Parcelable {
 
-    private int port;
-    private String credentials;
+    private String authBase64;
     private String address;
     private ArrayList<CustomItem> datalist = new ArrayList<>();
 
+    public ServerInfo(String address, String credentials) {
+        this.authBase64 = credentials;
+        this.address = address;
+    }
+
     protected ServerInfo(Parcel in) {
-        port = in.readInt();
-        credentials = in.readString();
+        authBase64 = in.readString();
         address = in.readString();
         ArrayList<CustomItem> list = new ArrayList<>();
         in.readList(list,CustomItem.class.getClassLoader());
@@ -27,8 +31,7 @@ public class ServerInfo implements Parcelable {
 
     @Override
     public void writeToParcel(Parcel dest, int flags) {
-        dest.writeInt(port);
-        dest.writeString(credentials);
+        dest.writeString(authBase64);
         dest.writeString(address);
         dest.writeList(datalist);
     }
@@ -68,29 +71,13 @@ public class ServerInfo implements Parcelable {
 
     private ArrayList<CustomItem> modelist = new ArrayList<>();
 
-    public ServerInfo(int port, String credentials, String address) {
-        this.port = port;
-        this.credentials = credentials;
-        this.address = address;
-    }
-
-    public int getPort() {
-        return port;
-    }
-
-    public String getCredentials() {
-        return credentials;
-    }
-
-    public String getAddress() {
-        return address;
+    public String getAuthBase64() {
+        return authBase64;
     }
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("http://").append(address).append(":").append(port);
-        return sb.toString();
+        return  address;
     }
 
 

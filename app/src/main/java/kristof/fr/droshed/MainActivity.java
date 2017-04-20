@@ -12,13 +12,14 @@ import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.GridView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
+
+import org.json.JSONException;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -34,65 +35,69 @@ public class MainActivity extends AppCompatActivity
     private View parentLayout;
     private GridView gridView;
     private ProgressBar progressBar;
-    private boolean isModelView;
+    private FloatingActionButton fab;
+    private NavigationView navigationView;
+    private DrawerLayout drawer;
+    private Toolbar toolbar;
+    private ActionBarDrawerToggle toggle;
     private ArrayList<CustomItem> datalist = new ArrayList<>();
     private ArrayList<CustomItem> modelist = new ArrayList<>();
+    private boolean isModelView;
 
     @Override
     protected void onSaveInstanceState(Bundle outState) {
         serverInfo.setDatalist(datalist);
         serverInfo.setModelist(modelist);
-        outState.putBoolean("isModelView",isModelView);
-        outState.putParcelable("serverInfo",serverInfo);
+        outState.putBoolean("isModelView", isModelView);
+        outState.putParcelable("serverInfo", serverInfo);
         super.onSaveInstanceState(outState);
     }
-
-
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
-        toolbar.setTitle(getString(R.string.home));
-        setToolbarFont(toolbar);
-        setSupportActionBar(toolbar);
-        parentLayout = findViewById(R.id.home);
-        gridView = (GridView) findViewById(R.id.gridViewHome);
-        progressBar = (ProgressBar) findViewById(R.id.progressBar);
-        FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
-        fab.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-                        .setAction("Action", null).show();
-            }
-        });
+        setToolbar();
+        initUiElements();
 
-        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
-        ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
-                this, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
+        toggle = new ActionBarDrawerToggle(this, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
+
+        fab.setOnClickListener(view -> Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
+                .setAction("Action", null).show());
+        // TODO
         drawer.setDrawerListener(toggle);
         toggle.syncState();
-
-        NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
-
-        if(savedInstanceState!=null){
+        if (savedInstanceState != null) {
             serverInfo = (ServerInfo) savedInstanceState.get("serverInfo");
             isModelView = savedInstanceState.getBoolean("isModelView");
-        }else{
+        } else {
             Intent intent = getIntent();
             if (intent != null) {
                 serverInfo = intent.getParcelableExtra("serverInfo");
             }
         }
-
-        if(isModelView){
+        if (isModelView) {
             refreshModelFromServer();
-        }else{
+        } else {
             refreshDataFromServer();
         }
+    }
+
+    private void setToolbar() {
+        toolbar = (Toolbar) findViewById(R.id.toolbar);
+        toolbar.setTitle(getString(R.string.home));
+        setToolbarFont(toolbar);
+        setSupportActionBar(toolbar);
+    }
+
+    private void initUiElements() {
+        parentLayout = findViewById(R.id.home);
+        gridView = (GridView) findViewById(R.id.gridViewHome);
+        progressBar = (ProgressBar) findViewById(R.id.progressBar);
+        fab = (FloatingActionButton) findViewById(R.id.fab);
+        navigationView = (NavigationView) findViewById(R.id.nav_view);
+        drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
     }
 
     private void refreshDataFromServer() {
@@ -101,8 +106,7 @@ public class MainActivity extends AppCompatActivity
         try {
             //TODO
             url = new URL(serverInfo + "/data");
-            String result = userClientTask.execute(url).get();
-            datalist = JsonUtil.toObject(result);
+            datalist = userClientTask.execute(url).get();
             CustomItemAdapter arrayAdapter = new CustomItemAdapter(this, datalist);
             gridView.setAdapter(arrayAdapter);
         } catch (Exception e) {
@@ -117,8 +121,7 @@ public class MainActivity extends AppCompatActivity
         try {
             //TODO
             url = new URL(serverInfo + "/model");
-            String result = userClientTask.execute(url).get();
-            datalist = JsonUtil.toObject(result);
+            datalist = userClientTask.execute(url).get();
             CustomItemAdapter arrayAdapter = new CustomItemAdapter(this, datalist);
             gridView.setAdapter(arrayAdapter);
         } catch (Exception e) {
@@ -161,17 +164,15 @@ public class MainActivity extends AppCompatActivity
         // automatically handle clicks on the Home/Up button, so long
         // as you specify a parent activity in AndroidManifest.xml.
         int id = item.getItemId();
-
         //noinspection SimplifiableIfStatement
         if (id == R.id.refresh) {
             if (isModelView) {
                 refreshModelFromServer();
-            }else{
+            } else {
                 refreshDataFromServer();
             }
             return true;
         }
-
         return super.onOptionsItemSelected(item);
     }
 
@@ -193,7 +194,7 @@ public class MainActivity extends AppCompatActivity
         return true;
     }
 
-    private class UserClientTask extends AsyncTask<URL, String, String> {
+    private class UserClientTask extends AsyncTask<URL, String, ArrayList<CustomItem>> {
         @Override
         protected void onPreExecute() {
             gridView.setVisibility(View.INVISIBLE);
@@ -202,25 +203,30 @@ public class MainActivity extends AppCompatActivity
         }
 
         @Override
-        protected String doInBackground(URL... params) {
+        protected ArrayList<CustomItem> doInBackground(URL... params) {
             for (URL url : params) {
                 HttpURLConnection urlConnection = null;
                 try {
                     urlConnection = (HttpURLConnection) url.openConnection();
                     urlConnection.setConnectTimeout(3000); //set timeout to 3 seconds
                     urlConnection.setReadTimeout(3000);
-                    urlConnection.setRequestProperty("Authorization", serverInfo.getCredentials());
+                    urlConnection.setRequestProperty("Authorization", serverInfo.getAuthBase64());
                     urlConnection.setRequestMethod("GET");
                     urlConnection.setDoInput(true);
+                    urlConnection.connect();
+                    if (urlConnection.getResponseCode() != 200) {
+                        //error
+                        return null;
+                    }
                     // Starts the query
                     BufferedReader in = new BufferedReader(new InputStreamReader(
                             urlConnection.getInputStream()));
                     String streamFromBufferReader = readStream(in);
                     in.close();
-                    int response = urlConnection.getResponseCode();
-                    Log.d("app", "The response is: " + response);
-                    return streamFromBufferReader;
+                    return JsonUtil.toObject(streamFromBufferReader);
                 } catch (IOException e) {
+                    e.printStackTrace();
+                } catch (JSONException e) {
                     e.printStackTrace();
                 } finally {
                     if (urlConnection != null)
@@ -230,22 +236,14 @@ public class MainActivity extends AppCompatActivity
             return null;
         }
 
-        private String readStream(BufferedReader in) throws IOException {
-            StringBuilder sb = new StringBuilder();
-            String inputLine;
-            while ((inputLine = in.readLine()) != null)
-                sb.append(inputLine);
-            return sb.toString();
-        }
-
         @Override
-        protected void onPostExecute(final String result) {
+        protected void onPostExecute(final ArrayList<CustomItem> result) {
             progressBar.setVisibility(View.INVISIBLE);
             gridView.setVisibility(View.VISIBLE);
-            if (!result.isEmpty()) {
-                runOnUiThread(() -> Snackbar.make(parentLayout, result, Snackbar.LENGTH_SHORT).show());
-            } else {
+            if (result.isEmpty()) {
                 runOnUiThread(() -> Snackbar.make(parentLayout, getString(R.string.alertConnexionProblem), Snackbar.LENGTH_SHORT).show());
+            } else {
+                runOnUiThread(() -> Snackbar.make(parentLayout, "Connexion OK!", Snackbar.LENGTH_SHORT).show());
             }
         }
 
@@ -254,6 +252,14 @@ public class MainActivity extends AppCompatActivity
             gridView.setVisibility(View.VISIBLE);
             progressBar.setVisibility(View.INVISIBLE);
         }
+    }
+
+    private String readStream(BufferedReader in) throws IOException {
+        StringBuilder sb = new StringBuilder();
+        String inputLine;
+        while ((inputLine = in.readLine()) != null)
+            sb.append(inputLine);
+        return sb.toString();
     }
 
 }
