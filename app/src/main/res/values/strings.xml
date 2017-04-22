@@ -3,7 +3,7 @@
     <string name="title_home_activity">Home</string>
     <string name="title_activity_main">MainActivity</string>
     <string name="action_settings">Refresh</string>
-    <string name="font">fonts/RicksAmericanNF.ttf</string>
+    <string name="font">fonts/Yodeb.ttf</string>
     <string name="title_activity_login">Sign in</string>
 
     <!-- Strings related to login -->
@@ -16,7 +16,7 @@
     <string name="error_invalid_password">This password is too short</string>
     <string name="error_incorrect_password">This password is incorrect</string>
     <string name="error_field_required">This field is required</string>
-    <string name="alertConnexionProblem">"Problème de connexion, vérifier vos identifiants de connexion."</string>
+    <string name="alertConnexionProblem">"Connection problem : Must verify login or password"</string>
 
     <!-- Strings related to sharedPref-->
     <string name="loginKey">login</string>

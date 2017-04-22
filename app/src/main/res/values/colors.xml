@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="colorPrimary">#3F51B5</color>
-    <color name="colorPrimaryDark">#303F9F</color>
-    <color name="colorUp">#ef5350</color>
-    <color name="colorDown">#ffc107</color>
-    <color name="white">#ffffff</color>
-    <color name="texteditcolorlogin">#151313</color>
+    <color name="RichBlack">#00072D</color>
+    <color name="OxfordBlue">#001C55</color>
+    <color name="CatalinaBlue">#0A2472</color>
+    <color name="SapphireBlue">#0E6BA8</color>
+    <color name="FreshAir">#A6E1FA</color>
+    <color name="White">#FFFFFF</color>
+    <color name="Black">#000000</color>
 </resources>
