@@ -12,10 +12,12 @@ import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import kristof.fr.droshed.custom.FontCache;
 import kristof.fr.droshed.R;
@@ -38,7 +40,7 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
         toggle = new ActionBarDrawerToggle(this, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
         toggle.syncState();
         drawer.addDrawerListener(toggle);
-
+        navigationView.setNavigationItemSelectedListener(this);
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
         fab.setOnClickListener(view ->
                 Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
@@ -93,11 +95,13 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
         if (id == R.id.nav_data) {
                 /*isModelView = false;
                 refreshDataFromServer();*/
+            Toast.makeText(this, "nav data", Toast.LENGTH_SHORT).show();
         } else if (id == R.id.nav_model) {
                 /*isModelView = true;
                 refreshModelFromServer();*/
+            Toast.makeText(this, "nav model", Toast.LENGTH_SHORT).show();
         }
-        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.nvView);
+        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.homeDrawerLayout);
         drawer.closeDrawer(GravityCompat.START);
         return true;
     }
