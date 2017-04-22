@@ -3,23 +3,16 @@ package kristof.fr.droshed.activity;
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.annotation.TargetApi;
-import android.app.LoaderManager.LoaderCallbacks;
-import android.content.CursorLoader;
 import android.content.Intent;
-import android.content.Loader;
 import android.content.SharedPreferences;
-import android.database.Cursor;
-import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
-import android.provider.ContactsContract;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.text.TextUtils;
 import android.util.Base64;
 import android.view.View;
-import android.widget.ArrayAdapter;
 import android.widget.AutoCompleteTextView;
 import android.widget.CheckBox;
 import android.widget.EditText;
@@ -28,8 +21,6 @@ import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.ExecutionException;
 
 import kristof.fr.droshed.R;
@@ -38,7 +29,7 @@ import kristof.fr.droshed.ServerInfo;
 /**
  * A login screen that offers login via root/password.
  */
-public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<Cursor> {
+public class LoginActivity extends AppCompatActivity {
 
     private AutoCompleteTextView userView;
     private EditText passwordView;
@@ -185,7 +176,6 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
             url = new URL(urlStr);
             return mAuthTask.execute(url).get();
         } catch (MalformedURLException | InterruptedException | ExecutionException e) {
-            Snackbar.make(parentView, getString(R.string.alertConnexionProblem), Snackbar.LENGTH_SHORT).show();
             mAuthTask.cancel(true);
             return false;
         }
@@ -228,6 +218,7 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
         }
     }
 
+    /*
     @Override
     public Loader<Cursor> onCreateLoader(int i, Bundle bundle) {
         return new CursorLoader(this,
@@ -275,7 +266,7 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
                 ContactsContract.CommonDataKinds.Email.IS_PRIMARY,
         };
         int ADDRESS = 0;
-    }
+    }*/
 
     /**
      To here
@@ -285,7 +276,7 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
      * Represents an asynchronous login/registration task used to authenticate
      * the user.
      */
-    private class UserLoginTask extends AsyncTask<URL, String, Boolean> {
+    private class UserLoginTask extends AsyncTask<URL, Void, Boolean> {
 
         private final String authBase64;
 
