@@ -80,23 +80,27 @@ def checkAuthentifation():
 @app.route("/model")
 @authenticated
 def getlistmodel():
-	return getlistfolder("model")
+	return getResponseWithJson("model")
 
 @app.route("/data")
 @authenticated
 def getlistdata():
-	return getlistfolder("data")
+	return getResponseWithJson("data")
 
-def getlistfolder(folder):
-	listdir = os.listdir(folder);
-	itemList = ""
-	a = 1;
-	for i in range(0,len(listdir)):
-		if(listdir[i].endswith(".auth")==False):
-			item = make_item(listdir[i],0)
-			itemList += item_tostring(item)
-	return jsonify(results = itemList)
+def getResponseWithJson(nameFolder):
+	return app.response_class(
+        response=json.dumps(path_to_dict(nameFolder), indent=2),
+        status=200,
+        mimetype='application/json')
 
+def path_to_dict(path):
+    d = {'name': os.path.basename(path)}
+    if os.path.isdir(path):
+        d['type'] = "directory"
+        d['children'] = [path_to_dict(os.path.join(path,x)) for x in os.listdir(path)]
+    else:
+        d['type'] = "file"
+    return d
 
 @app.route("/<sheetname>/model")
 @authenticated
@@ -149,6 +153,7 @@ def putversion(sheetname, version):
 		return "registered", 200
 
 if __name__ == "__main__":
+	loginDir = "login"
 	try:
 		(port, modeldir, datadir) = (int(sys.argv[1]), sys.argv[2], sys.argv[3])
 	except:
@@ -158,7 +163,7 @@ if __name__ == "__main__":
 		app.config.update(modeldir=modeldir, datadir=datadir)
 		# load the users
 		users = {}
-		with open(os.path.join(modeldir, ".auth")) as f:
+		with open(os.path.join(loginDir, ".auth")) as f:
 			for line in filter(lambda x: x.strip() and x.find(":") >= 0, f):
 				(login, password) = line.split(":", 1)
 				users[login.strip()] = password.strip()
