@@ -1,0 +1,14 @@
+App Android
+
+- Changer le logo (multi screen)
+- Harmoniser la gestion du style de l'application
+- Gérer l'orientation de l'écran
+- Création des asynctask pour lister les model et les data
+- Création de fragment pour le listing des model/data
+- Supprimer une data/model
+- Renommer une data/model
+- Rafraichir data/model
+
+Coté Serveur
+
+- pouvoir jsonifier proprement la liste des fichiers des dossiers
