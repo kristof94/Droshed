@@ -1,10 +1,12 @@
-package kristof.fr.droshed;
+package kristof.fr.droshed.custom;
 
 import android.content.Context;
 import android.graphics.Typeface;
 import android.support.annotation.Nullable;
 import android.util.AttributeSet;
 import android.widget.TextView;
+
+import kristof.fr.droshed.R;
 
 /**
  * Created by kristof
@@ -35,7 +37,6 @@ public class CustomTextView extends TextView {
         switch (textStyle) {
             case Typeface.BOLD: // bold
                 return FontCache.getFont(context,context.getString(R.string.font));
-
             case Typeface.ITALIC: // italic
                 return FontCache.getFont(context,context.getString(R.string.font));
 

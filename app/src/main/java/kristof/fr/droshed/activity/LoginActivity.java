@@ -1,4 +1,4 @@
-package kristof.fr.droshed;
+package kristof.fr.droshed.activity;
 
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
@@ -31,6 +31,9 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
+
+import kristof.fr.droshed.R;
+import kristof.fr.droshed.ServerInfo;
 
 /**
  * A login screen that offers login via root/password.
@@ -99,7 +102,7 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
     }
 
     private void startMainActivityAndExitLoginActivity(ServerInfo serverInfo) {
-        Intent mainIntent = new Intent(LoginActivity.this, MainActivity.class);
+        Intent mainIntent = new Intent(LoginActivity.this, HomeActivity.class);
         mainIntent.putExtra("serverInfo", serverInfo);
         startActivity(mainIntent);
         finish();

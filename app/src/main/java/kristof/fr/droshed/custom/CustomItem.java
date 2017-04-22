@@ -1,4 +1,4 @@
-package kristof.fr.droshed;
+package kristof.fr.droshed.custom;
 
 import android.os.Parcel;
 import android.os.Parcelable;

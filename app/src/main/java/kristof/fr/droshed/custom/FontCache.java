@@ -1,4 +1,4 @@
-package kristof.fr.droshed;
+package kristof.fr.droshed.custom;
 
 import android.content.Context;
 import android.graphics.Typeface;

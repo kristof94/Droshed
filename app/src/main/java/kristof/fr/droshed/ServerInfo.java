@@ -5,6 +5,8 @@ import android.os.Parcelable;
 
 import java.util.ArrayList;
 
+import kristof.fr.droshed.custom.CustomItem;
+
 /**
  * Created by kristof
  * on 4/13/17.

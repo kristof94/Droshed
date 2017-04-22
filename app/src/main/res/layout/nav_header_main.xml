@@ -13,7 +13,7 @@
     android:theme="@style/ThemeOverlay.AppCompat.Dark">
 
     <view
-        class="kristof.fr.droshed.CustomTextView"
+        class="kristof.fr.droshed.custom.CustomTextView"
         id="@+id/view"
         layout_width="match_parent"
         android:layout_width="wrap_content"

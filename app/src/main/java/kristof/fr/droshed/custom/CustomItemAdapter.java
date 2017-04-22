@@ -1,7 +1,6 @@
-package kristof.fr.droshed;
+package kristof.fr.droshed.custom;
 
 import android.content.Context;
-import android.support.annotation.LayoutRes;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.view.LayoutInflater;
@@ -11,6 +10,8 @@ import android.widget.ArrayAdapter;
 import android.widget.TextView;
 
 import java.util.ArrayList;
+
+import kristof.fr.droshed.R;
 
 /**
  * Created by kristof

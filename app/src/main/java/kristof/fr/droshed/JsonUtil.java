@@ -7,6 +7,8 @@ import java.util.ArrayList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import kristof.fr.droshed.custom.CustomItem;
+
 public class JsonUtil {
 
     public static ArrayList<CustomItem> toObject(String json) throws JSONException {

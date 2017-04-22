@@ -5,12 +5,12 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/colorUp"
-    tools:context="kristof.fr.droshed.SplashActivity"
+    tools:context="kristof.fr.droshed.activity.SplashActivity"
     tools:layout_editor_absoluteX="0dp"
     tools:layout_editor_absoluteY="0dp">
 
     <view
-        class="kristof.fr.droshed.CustomTextView"
+        class="kristof.fr.droshed.custom.CustomTextView"
         id="@+id/view"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"

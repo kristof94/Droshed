@@ -1,9 +1,11 @@
-package kristof.fr.droshed;
+package kristof.fr.droshed.activity;
 
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.v7.app.AppCompatActivity;
+
+import kristof.fr.droshed.R;
 
 public class SplashActivity extends AppCompatActivity {
 
