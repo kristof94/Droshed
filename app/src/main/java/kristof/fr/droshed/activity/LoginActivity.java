@@ -84,8 +84,7 @@ public class LoginActivity extends AppCompatActivity {
     }
 
     private void saveData(String url, String user, String password) {
-        SharedPreferences sp = getSharedPreferences(getString(R.string.loginKey), 0);
-        SharedPreferences.Editor ed = sp.edit();
+        SharedPreferences.Editor ed = sharedPreferences.edit();
         ed.putString(getString(R.string.url), url);
         ed.putString(getString(R.string.username), user);
         ed.putString(getString(R.string.password), password);
