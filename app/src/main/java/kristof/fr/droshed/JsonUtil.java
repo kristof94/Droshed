@@ -38,7 +38,7 @@ public class JsonUtil {
         if(type.equals("file"))
             return new FileItemExplorer(type,name,R.layout.custom_item_layout);
         else if (type.equals("directory")){
-            return new FolderItemExplorer(type,name,R.layout.custom_item_layout,toListofCustomItemfromJsonObject(json));
+            return new FolderItemExplorer(type,name,R.layout.custom_item_folder_layout,toListofCustomItemfromJsonObject(json));
         }
         else return null;
     }

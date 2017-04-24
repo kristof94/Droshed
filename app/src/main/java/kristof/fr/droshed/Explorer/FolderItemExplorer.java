@@ -1,6 +1,8 @@
 package kristof.fr.droshed.Explorer;
 
 import android.os.Parcel;
+
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -10,9 +12,9 @@ import java.util.List;
 
 public class FolderItemExplorer extends ItemExplorer {
 
-    private List<ItemExplorer> itemExplorerList;
+    private ArrayList<ItemExplorer> itemExplorerList;
 
-    public FolderItemExplorer(String type, String name,int id,List<ItemExplorer> list) {
+    public FolderItemExplorer(String type, String name,int id,ArrayList<ItemExplorer> list) {
         super(type, name,id);
         this.itemExplorerList = list;
     }
@@ -24,7 +26,7 @@ public class FolderItemExplorer extends ItemExplorer {
         return sb.toString();
     }
 
-    public List<ItemExplorer> getItemExplorerList() {
+    public ArrayList<ItemExplorer> getItemExplorerList() {
         return itemExplorerList;
     }
 

@@ -5,16 +5,17 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
+
     <ImageView
         android:id="@+id/imageView"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        app:srcCompat="@android:drawable/sym_contact_card" />
+        app:srcCompat="@drawable/ic_menu_gallery" />
 
     <TextView
         android:id="@+id/textView2"
         android:layout_width="wrap_content"
         android:layout_height="match_parent"
-        android:gravity="bottom|end"
-        />
+        android:layout_gravity="center_horizontal"
+        android:gravity="bottom|end" />
 </LinearLayout>

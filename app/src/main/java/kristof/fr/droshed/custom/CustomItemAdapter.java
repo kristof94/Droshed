@@ -34,14 +34,12 @@ public class CustomItemAdapter extends ArrayAdapter<ItemExplorer> {
     public View getView(int position, @Nullable View convertView, @NonNull ViewGroup parent) {
         ItemExplorer item = getItem(position);
         if (convertView == null) {
-
             convertView = LayoutInflater.from(getContext()).inflate(item.getLayoutID(), parent, false);
             convertView.requestLayout();
         }
 
         TextView textView = (TextView) convertView.findViewById(R.id.textView2);
         textView.setText(item.getName());
-        convertView.setOnClickListener(view-> Snackbar.make(view,item.getName(),Snackbar.LENGTH_SHORT).show());
         return convertView;
     }
 
