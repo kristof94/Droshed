@@ -33,7 +33,6 @@ public class CustomFragment extends android.support.v4.app.Fragment {
     private GridView gridView;
     private List<ItemExplorer> itemExplorerList;
 
-
     @Nullable
     @Override
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, Bundle savedInstanceState) {

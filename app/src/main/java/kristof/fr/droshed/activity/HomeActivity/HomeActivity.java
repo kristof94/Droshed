@@ -80,8 +80,7 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
                 return;
             }
         }
-        task = new CustomAsyncTask();
-        refreshListFolder("/data");
+        refreshListData();
     }
 
     private CustomFragment createNewFragment(ArrayList<ItemExplorer> list) {
@@ -92,6 +91,14 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
         // Intent, pass the Intent's extras to the fragment as arguments
         firstFragment.setArguments(args);
         return firstFragment;
+    }
+
+    private void refreshListData() {
+        refreshListFolder("/data");
+    }
+
+    private void refreshListModel() {
+        refreshListFolder("/model");
     }
 
     private void refreshListFolder(String folderPath) {
@@ -143,8 +150,12 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
             case android.R.id.home:
                 drawer.openDrawer(GravityCompat.START);
                 return true;
+            case R.id.refresh:
+                System.out.println("settings");
+                return true;
+            default:
+                return super.onOptionsItemSelected(item);
         }
-        return super.onOptionsItemSelected(item);
     }
 
     @Override
@@ -157,8 +168,8 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
         if (id == R.id.nav_data) {
                 /*isModelView = false;
                 refreshDataFromServer();*/
-            if (listModel.isEmpty()) {
-                refreshListFolder("/data");
+            if (listData.isEmpty()) {
+                refreshListData();
             } else {
                 getSupportFragmentManager().beginTransaction().replace(R.id.flContent, createNewFragment(listData)).commit();
             }
@@ -166,7 +177,7 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
                 /*isModelView = true;
                 refreshModelFromServer();*/
             if (listModel.isEmpty()) {
-                refreshListFolder("/model");
+                refreshListModel();
             } else {
                 getSupportFragmentManager().beginTransaction().replace(R.id.flContent, createNewFragment(listModel)).commit();
             }
@@ -198,11 +209,16 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
 
     private class CustomAsyncTask extends AsyncTask<URL, Void, ArrayList<ItemExplorer>> {
 
+        public CustomAsyncTask() {
+
+        }
+
         @Override
         protected ArrayList<ItemExplorer> doInBackground(URL... params) {
             for (URL url : params) {
                 HttpURLConnection urlConnection = null;
                 try {
+                    System.out.println("download list.");
                     urlConnection = (HttpURLConnection) url.openConnection();
                     urlConnection.setConnectTimeout(3000); //set timeout to 3 seconds
                     urlConnection.setReadTimeout(3000);
@@ -229,11 +245,7 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
         @Override
         protected void onPostExecute(ArrayList<ItemExplorer> s) {
             super.onPostExecute(s);
-            if (getSupportFragmentManager().getBackStackEntryCount() > 0) {
-                getSupportFragmentManager().beginTransaction().replace(R.id.flContent, createNewFragment(s)).commit();
-            } else {
-                getSupportFragmentManager().beginTransaction().replace(R.id.flContent, createNewFragment(s)).commit();
-            }
+            getSupportFragmentManager().beginTransaction().replace(R.id.flContent, createNewFragment(s)).commit();
             task = null;
         }
 
