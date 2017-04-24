@@ -25,6 +25,7 @@ import java.util.concurrent.ExecutionException;
 
 import kristof.fr.droshed.R;
 import kristof.fr.droshed.ServerInfo;
+import kristof.fr.droshed.activity.HomeActivity.HomeActivity;
 
 /**
  * A login screen that offers login via root/password.

@@ -1,7 +1,9 @@
-package kristof.fr.droshed.activity;
+package kristof.fr.droshed.activity.HomeActivity;
 
+import android.content.Intent;
 import android.content.res.Configuration;
 import android.graphics.Typeface;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
@@ -18,7 +20,19 @@ import android.view.View;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.concurrent.ExecutionException;
+
+import kristof.fr.droshed.Explorer.ItemExplorer;
+import kristof.fr.droshed.JsonUtil;
 import kristof.fr.droshed.R;
+import kristof.fr.droshed.ServerInfo;
 import kristof.fr.droshed.custom.FontCache;
 
 public class HomeActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener {
@@ -27,6 +41,7 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
     private Toolbar toolbar;
     private NavigationView navigationView;
     private ActionBarDrawerToggle toggle;
+    private ServerInfo serverInfo;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -35,7 +50,6 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
         setToolbar();
         drawer = (DrawerLayout) findViewById(R.id.homeDrawerLayout);
         navigationView = (NavigationView) findViewById(R.id.nvView);
-
         toggle = new ActionBarDrawerToggle(this, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
         toggle.syncState();
         drawer.addDrawerListener(toggle);
@@ -45,6 +59,52 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
                 Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
                         .setAction("Action", null).show()
         );
+
+        Intent intent = getIntent();
+        if (intent != null) {
+            serverInfo = intent.getParcelableExtra("serverInfo");
+        }
+
+        ;
+        if (findViewById(R.id.flContent) != null) {
+
+            // However, if we're being restored from a previous state,
+            // then we don't need to do anything and should return or else
+            // we could end up with overlapping fragments.
+            if (savedInstanceState != null) {
+                return;
+            }
+
+            // Create a new Fragment to be placed in the activity layout
+            CustomFragment firstFragment = new CustomFragment();
+            Bundle args = new Bundle();
+            args.putParcelableArrayList("list",refreshListFolder("/data"));
+            // In case this activity was started with special instructions from an
+            // Intent, pass the Intent's extras to the fragment as arguments
+            firstFragment.setArguments(args);
+            // Add the fragment to the 'fragment_container' FrameLayout
+            getSupportFragmentManager().beginTransaction().add(R.id.flContent,firstFragment).commit();
+        }
+
+
+    }
+
+    private ArrayList<ItemExplorer> refreshListFolder(String folderPath) {
+        URL url;
+        try {
+            url = new URL(serverInfo + folderPath);
+            String response = getStringJsonFromFolder(url);
+            return JsonUtil.toListofCustomItem(response);
+        } catch (Exception e) {
+            e.printStackTrace();
+            Snackbar.make(drawer, "Erreur de connexion", Snackbar.LENGTH_SHORT).show();
+        }
+        return null;
+    }
+
+    private String getStringJsonFromFolder(URL url) throws ExecutionException, InterruptedException {
+        CustomAsyncTask task = new CustomAsyncTask();
+        return task.execute(url).get();
     }
 
     @Override
@@ -119,5 +179,55 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
         // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.main, menu);
         return true;
+    }
+
+    private class CustomAsyncTask extends AsyncTask<URL, Void, String> {
+
+        @Override
+        protected String doInBackground(URL... params) {
+            for (URL url : params) {
+                HttpURLConnection urlConnection = null;
+                try {
+                    urlConnection = (HttpURLConnection) url.openConnection();
+                    urlConnection.setConnectTimeout(3000); //set timeout to 3 seconds
+                    urlConnection.setReadTimeout(3000);
+                    urlConnection.setRequestProperty("Authorization", serverInfo.getAuthBase64());
+                    urlConnection.setRequestMethod("GET");
+                    urlConnection.setDoInput(true);
+                    // Starts the query
+                    urlConnection.connect();
+                    if (urlConnection.getResponseCode() == 200) {
+                        return getStringFromInputStream(urlConnection.getInputStream());
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
+                } finally {
+                    if (urlConnection != null)
+                        urlConnection.disconnect();
+                }
+            }
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(String s) {
+            super.onPostExecute(s);
+        }
+
+        @Override
+        protected void onCancelled() {
+            super.onCancelled();
+        }
+    }
+
+    private static String getStringFromInputStream(InputStream inputStream) throws IOException {
+        BufferedReader in = new BufferedReader(new InputStreamReader(
+                inputStream));
+        StringBuilder sb = new StringBuilder();
+        String inputLine;
+        while ((inputLine = in.readLine()) != null)
+            sb.append(inputLine);
+        in.close();
+        return sb.toString();
     }
 }

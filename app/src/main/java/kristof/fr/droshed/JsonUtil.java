@@ -1,26 +1,48 @@
 package kristof.fr.droshed;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
-import kristof.fr.droshed.custom.CustomItem;
+import kristof.fr.droshed.Explorer.FileItemExplorer;
+import kristof.fr.droshed.Explorer.FolderItemExplorer;
+import kristof.fr.droshed.Explorer.ItemExplorer;
 
 public class JsonUtil {
 
-    public static ArrayList<CustomItem> toObject(String json) throws JSONException {
-        ArrayList<CustomItem> list = new ArrayList<>();
+    public static ArrayList<ItemExplorer> toListofCustomItem(String json) throws JSONException {
+        if(json==null)
+            return null;
+        ArrayList<ItemExplorer> list = new ArrayList<>();
         JSONObject jObj = new JSONObject(json);
-        String models = jObj.getString("results");
-        Pattern pattern = Pattern.compile("(?<=\\{name:)(.*?)(?=\\})");
-        Matcher matcher = pattern.matcher(models);
-            while (matcher.find()){
-                String data = matcher.group(0);
-                list.add(new CustomItem(data));
-            }
+        return toListofCustomItemfromJsonObject(jObj);
+    }
+
+    public static ArrayList<ItemExplorer> toListofCustomItemfromJsonObject(JSONObject json) throws JSONException {
+        if(json==null)
+            return null;
+        ArrayList<ItemExplorer> list = new ArrayList<>();
+        JSONArray jsonArray = json.getJSONArray("children");
+        for(int i=0;i<jsonArray.length();i++){
+            JSONObject jsonLine = jsonArray.getJSONObject(i);
+            list.add(createItemExplorer(jsonLine));
+        }
         return list;
     }
+
+    private static ItemExplorer createItemExplorer(JSONObject json) throws JSONException {
+        String name = json.getString("name");
+        String type = json.getString("type");
+        if(type.equals("file"))
+            return new FileItemExplorer(type,name,R.layout.custom_item_layout);
+        else if (type.equals("directory")){
+            return new FolderItemExplorer(type,name,R.layout.custom_item_layout,toListofCustomItemfromJsonObject(json));
+        }
+        else return null;
+    }
+
+
+
 }

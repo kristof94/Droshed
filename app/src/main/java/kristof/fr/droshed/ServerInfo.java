@@ -5,7 +5,7 @@ import android.os.Parcelable;
 
 import java.util.ArrayList;
 
-import kristof.fr.droshed.custom.CustomItem;
+import kristof.fr.droshed.Explorer.ItemExplorer;
 
 /**
  * Created by kristof
@@ -17,7 +17,7 @@ public class ServerInfo implements Parcelable {
 
     private String authBase64;
     private String address;
-    private ArrayList<CustomItem> datalist = new ArrayList<>();
+    private ArrayList<ItemExplorer> datalist = new ArrayList<>();
 
     public ServerInfo(String address, String credentials) {
         this.authBase64 = credentials;
@@ -27,8 +27,8 @@ public class ServerInfo implements Parcelable {
     protected ServerInfo(Parcel in) {
         authBase64 = in.readString();
         address = in.readString();
-        ArrayList<CustomItem> list = new ArrayList<>();
-        in.readList(list,CustomItem.class.getClassLoader());
+        ArrayList<ItemExplorer> list = new ArrayList<>();
+        in.readList(list,ItemExplorer.class.getClassLoader());
     }
 
     @Override
@@ -55,23 +55,23 @@ public class ServerInfo implements Parcelable {
         }
     };
 
-    public ArrayList<CustomItem> getDatalist() {
+    public ArrayList<ItemExplorer> getDatalist() {
         return datalist;
     }
 
-    public void setDatalist(ArrayList<CustomItem> datalist) {
+    public void setDatalist(ArrayList<ItemExplorer> datalist) {
         this.datalist = datalist;
     }
 
-    public ArrayList<CustomItem> getModelist() {
+    public ArrayList<ItemExplorer> getModelist() {
         return modelist;
     }
 
-    public void setModelist(ArrayList<CustomItem> modelist) {
+    public void setModelist(ArrayList<ItemExplorer> modelist) {
         this.modelist = modelist;
     }
 
-    private ArrayList<CustomItem> modelist = new ArrayList<>();
+    private ArrayList<ItemExplorer> modelist = new ArrayList<>();
 
     public String getAuthBase64() {
         return authBase64;
