@@ -44,8 +44,8 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
     private ActionBarDrawerToggle toggle;
     private ServerInfo serverInfo;
     private CustomAsyncTask task;
-    private ArrayList<ItemExplorer> listData;
-    private ArrayList<ItemExplorer> listModel;
+    private ArrayList<ItemExplorer> listData = new ArrayList<>();
+    private ArrayList<ItemExplorer> listModel = new ArrayList<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -83,7 +83,6 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
         task = new CustomAsyncTask();
         refreshListFolder("/data");
     }
-
 
     private CustomFragment createNewFragment(ArrayList<ItemExplorer> list) {
         CustomFragment firstFragment = new CustomFragment();
@@ -158,11 +157,19 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
         if (id == R.id.nav_data) {
                 /*isModelView = false;
                 refreshDataFromServer();*/
-            refreshListFolder("/data");
+            if (listModel.isEmpty()) {
+                refreshListFolder("/data");
+            } else {
+                getSupportFragmentManager().beginTransaction().replace(R.id.flContent, createNewFragment(listData)).commit();
+            }
         } else if (id == R.id.nav_model) {
                 /*isModelView = true;
                 refreshModelFromServer();*/
-            refreshListFolder("/model");
+            if (listModel.isEmpty()) {
+                refreshListFolder("/model");
+            } else {
+                getSupportFragmentManager().beginTransaction().replace(R.id.flContent, createNewFragment(listModel)).commit();
+            }
         }
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.homeDrawerLayout);
         drawer.closeDrawer(GravityCompat.START);
@@ -222,7 +229,6 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
         @Override
         protected void onPostExecute(ArrayList<ItemExplorer> s) {
             super.onPostExecute(s);
-            System.out.println(getSupportFragmentManager().getBackStackEntryCount());
             if (getSupportFragmentManager().getBackStackEntryCount() > 0) {
                 getSupportFragmentManager().beginTransaction().replace(R.id.flContent, createNewFragment(s)).commit();
             } else {
