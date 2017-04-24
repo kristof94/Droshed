@@ -9,9 +9,7 @@ import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.NavigationView;
 import android.support.design.widget.Snackbar;
-import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
-import android.support.v4.app.FragmentTransaction;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
@@ -21,7 +19,8 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.TextView;
-import android.widget.Toast;
+
+import org.json.JSONException;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -30,7 +29,6 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.concurrent.ExecutionException;
 
 import kristof.fr.droshed.Explorer.ItemExplorer;
 import kristof.fr.droshed.JsonUtil;
@@ -45,6 +43,9 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
     private NavigationView navigationView;
     private ActionBarDrawerToggle toggle;
     private ServerInfo serverInfo;
+    private CustomAsyncTask task;
+    private ArrayList<ItemExplorer> listData;
+    private ArrayList<ItemExplorer> listModel;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -75,50 +76,35 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
             // then we don't need to do anything and should return or else
             // we could end up with overlapping fragments.
             if (savedInstanceState != null) {
+
                 return;
             }
-
-            // Create a new Fragment to be placed in the activity layout
-
-            // Add the fragment to the 'fragment_container' FrameLayout
-            getSupportFragmentManager().beginTransaction().add(R.id.flContent,addDataFragment()).commit();
         }
+        task = new CustomAsyncTask();
+        refreshListFolder("/data");
     }
 
-    private CustomFragment addDataFragment(){
-        return createNewFragment("/data");
-    }
 
-    private CustomFragment addModelFragment(){
-        return createNewFragment("/model");
-    }
-
-    private CustomFragment createNewFragment(String path){
+    private CustomFragment createNewFragment(ArrayList<ItemExplorer> list) {
         CustomFragment firstFragment = new CustomFragment();
         Bundle args = new Bundle();
-        args.putParcelableArrayList("list",refreshListFolder(path));
+        args.putParcelableArrayList("list", list);
         // In case this activity was started with special instructions from an
         // Intent, pass the Intent's extras to the fragment as arguments
         firstFragment.setArguments(args);
         return firstFragment;
     }
 
-    private ArrayList<ItemExplorer> refreshListFolder(String folderPath) {
+    private void refreshListFolder(String folderPath) {
         URL url;
         try {
             url = new URL(serverInfo + folderPath);
-            String response = getStringJsonFromFolder(url);
-            return JsonUtil.toListofCustomItem(response);
+            task = new CustomAsyncTask();
+            task.execute(url);
         } catch (Exception e) {
             e.printStackTrace();
             Snackbar.make(drawer, "Erreur de connexion", Snackbar.LENGTH_SHORT).show();
         }
-        return null;
-    }
-
-    private String getStringJsonFromFolder(URL url) throws ExecutionException, InterruptedException {
-        CustomAsyncTask task = new CustomAsyncTask();
-        return task.execute(url).get();
     }
 
     @Override
@@ -172,12 +158,11 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
         if (id == R.id.nav_data) {
                 /*isModelView = false;
                 refreshDataFromServer();*/
-            getSupportFragmentManager().beginTransaction().replace(R.id.flContent,addDataFragment()).commit();
+            refreshListFolder("/data");
         } else if (id == R.id.nav_model) {
                 /*isModelView = true;
                 refreshModelFromServer();*/
-
-            getSupportFragmentManager().beginTransaction().replace(R.id.flContent,addModelFragment()).commit();
+            refreshListFolder("/model");
         }
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.homeDrawerLayout);
         drawer.closeDrawer(GravityCompat.START);
@@ -189,7 +174,7 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
         if (drawer.isDrawerOpen(GravityCompat.START)) {
             drawer.closeDrawer(GravityCompat.START);
         } else {
-            if (getSupportFragmentManager().getBackStackEntryCount() > 0 ){
+            if (getSupportFragmentManager().getBackStackEntryCount() > 0) {
                 getSupportFragmentManager().popBackStack();
             } else {
                 super.onBackPressed();
@@ -204,10 +189,10 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
         return true;
     }
 
-    private class CustomAsyncTask extends AsyncTask<URL, Void, String> {
+    private class CustomAsyncTask extends AsyncTask<URL, Void, ArrayList<ItemExplorer>> {
 
         @Override
-        protected String doInBackground(URL... params) {
+        protected ArrayList<ItemExplorer> doInBackground(URL... params) {
             for (URL url : params) {
                 HttpURLConnection urlConnection = null;
                 try {
@@ -220,9 +205,11 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
                     // Starts the query
                     urlConnection.connect();
                     if (urlConnection.getResponseCode() == 200) {
-                        return getStringFromInputStream(urlConnection.getInputStream());
+                        return JsonUtil.toListofCustomItem(getStringFromInputStream(urlConnection.getInputStream()));
                     }
                 } catch (IOException e) {
+                    e.printStackTrace();
+                } catch (JSONException e) {
                     e.printStackTrace();
                 } finally {
                     if (urlConnection != null)
@@ -233,13 +220,21 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
         }
 
         @Override
-        protected void onPostExecute(String s) {
+        protected void onPostExecute(ArrayList<ItemExplorer> s) {
             super.onPostExecute(s);
+            System.out.println(getSupportFragmentManager().getBackStackEntryCount());
+            if (getSupportFragmentManager().getBackStackEntryCount() > 0) {
+                getSupportFragmentManager().beginTransaction().replace(R.id.flContent, createNewFragment(s)).commit();
+            } else {
+                getSupportFragmentManager().beginTransaction().replace(R.id.flContent, createNewFragment(s)).commit();
+            }
+            task = null;
         }
 
         @Override
         protected void onCancelled() {
             super.onCancelled();
+            task = null;
         }
     }
 
