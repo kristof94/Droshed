@@ -64,13 +64,12 @@ def authenticated(f):
     @wraps(f)
     def decorated(*args, **kwargs):
         auth = request.authorization
+        print(app.config['users'].get(auth.username))
+        print(auth.password)
         if not auth or app.config['users'].get(auth.username) != auth.password:
-            return Response('Authentication error', 401,
-                            {app.config['users'
-                            ].get(auth.username): auth.password})
+            return Response('Authentication error', 401,{app.config['users'].get(auth.username): auth.password})
         return f(*args, **kwargs)
     return decorated
-
 
 @app.route("/login")
 @authenticated
@@ -168,5 +167,7 @@ if __name__ == "__main__":
 				(login, password) = line.split(":", 1)
 				users[login.strip()] = password.strip()
 		app.config["users"] = users
+		print(app.config["users"])
+		print(password.strip())
 		# run the server
 		app.run(host="0.0.0.0",port=port)

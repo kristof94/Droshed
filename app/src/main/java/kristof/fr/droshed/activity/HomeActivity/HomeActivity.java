@@ -1,6 +1,5 @@
 package kristof.fr.droshed.activity.HomeActivity;
 
-import android.support.v4.app.Fragment;
 import android.content.Intent;
 import android.content.res.Configuration;
 import android.graphics.Typeface;
@@ -32,7 +31,6 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 
 import kristof.fr.droshed.Explorer.ItemExplorer;
 import kristof.fr.droshed.JsonUtil;
@@ -161,7 +159,10 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
                 drawer.openDrawer(GravityCompat.START);
                 return true;
             case R.id.refresh:
-
+                if(hashMap.get("/data").isAdded())
+                    refreshListData();
+                if(hashMap.get("/model").isAdded())
+                    refreshListModel();
                 return true;
             default:
                 return super.onOptionsItemSelected(item);
@@ -178,13 +179,13 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
         if (id == R.id.nav_data) {
             CustomFragment customFragment = hashMap.get("/data");
             fragmentTransaction.replace(R.id.flContent,customFragment,"/data").commit();
-            if(listData.isEmpty()){
+            if(!hashMap.get("/data").isAdded()) {
                 refreshListData();
             }
         } else if (id == R.id.nav_model) {
             CustomFragment customFragment = hashMap.get("/model");
             fragmentTransaction.replace(R.id.flContent,customFragment,"/model").commit();
-            if(listModel.isEmpty()){
+            if(!hashMap.get("/model").isAdded()){
                 refreshListModel();
             }
         }
@@ -217,7 +218,7 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
 
         private String tag;
 
-        public CustomAsyncTask(String tag){
+        CustomAsyncTask(String tag){
             this.tag = tag;
         }
 
@@ -252,8 +253,7 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
         @Override
         protected void onPostExecute(ArrayList<ItemExplorer> s) {
             super.onPostExecute(s);
-            CustomFragment currentFragment = (CustomFragment) fragmentManager.findFragmentByTag(tag);
-            currentFragment.updateGridViewList(s);
+            hashMap.get(tag).updateGridViewList(s);
         }
 
         @Override
