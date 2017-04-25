@@ -14,6 +14,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.GridView;
+import android.widget.ListAdapter;
 
 import java.util.List;
 
@@ -28,10 +29,12 @@ import kristof.fr.droshed.custom.CustomItemAdapter;
  * on 4/23/17.
  */
 
-public class CustomFragment extends android.support.v4.app.Fragment {
+public class CustomFragment extends  android.support.v4.app.Fragment {
 
     private GridView gridView;
     private List<ItemExplorer> itemExplorerList;
+    private int idFragment;
+    private CustomItemAdapter customAdapter;
 
     @Nullable
     @Override
@@ -53,6 +56,12 @@ public class CustomFragment extends android.support.v4.app.Fragment {
         }
     }
 
+    public void updateGridViewList(List<ItemExplorer> s) {
+        itemExplorerList.clear();
+        itemExplorerList.addAll(s);
+        customAdapter.notifyDataSetChanged();
+    }
+
     @Override
     public void onViewCreated(View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
@@ -68,6 +77,7 @@ public class CustomFragment extends android.support.v4.app.Fragment {
                     FolderItemExplorer folderItemExplorer = (FolderItemExplorer) itemExplorer;
                     CustomFragment firstFragment = new CustomFragment();
                     Bundle args = new Bundle();
+                    args.putInt("id",idFragment);
                     args.putParcelableArrayList("list",folderItemExplorer.getItemExplorerList());
                     // In case this activity was started with special instructions from an
                     // Intent, pass the Intent's extras to the fragment as arguments
@@ -81,8 +91,10 @@ public class CustomFragment extends android.support.v4.app.Fragment {
         if (getArguments() != null) {
             Bundle args = getArguments();
             if (args.containsKey("list")) {
+                idFragment = args.getInt("id");
                 itemExplorerList = args.getParcelableArrayList("list");
-                gridView.setAdapter(new CustomItemAdapter(getActivity(), itemExplorerList));
+                customAdapter = new CustomItemAdapter(getActivity(),itemExplorerList);
+                gridView.setAdapter(customAdapter);
             }
         }
 

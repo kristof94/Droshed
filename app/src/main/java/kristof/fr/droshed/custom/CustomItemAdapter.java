@@ -37,7 +37,6 @@ public class CustomItemAdapter extends ArrayAdapter<ItemExplorer> {
             convertView = LayoutInflater.from(getContext()).inflate(item.getLayoutID(), parent, false);
             convertView.requestLayout();
         }
-
         TextView textView = (TextView) convertView.findViewById(R.id.textView2);
         textView.setText(item.getName());
         return convertView;

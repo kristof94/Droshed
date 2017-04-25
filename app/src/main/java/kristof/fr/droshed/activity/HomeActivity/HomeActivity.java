@@ -1,5 +1,6 @@
 package kristof.fr.droshed.activity.HomeActivity;
 
+import android.support.v4.app.Fragment;
 import android.content.Intent;
 import android.content.res.Configuration;
 import android.graphics.Typeface;
@@ -10,6 +11,7 @@ import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.NavigationView;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.FragmentManager;
+import android.support.v4.app.FragmentTransaction;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
@@ -29,6 +31,8 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 
 import kristof.fr.droshed.Explorer.ItemExplorer;
 import kristof.fr.droshed.JsonUtil;
@@ -43,9 +47,11 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
     private NavigationView navigationView;
     private ActionBarDrawerToggle toggle;
     private ServerInfo serverInfo;
-    private CustomAsyncTask task;
+    private FragmentManager fragmentManager;
+    private FragmentTransaction fragmentTransaction;
     private ArrayList<ItemExplorer> listData = new ArrayList<>();
     private ArrayList<ItemExplorer> listModel = new ArrayList<>();
+    private HashMap<String,CustomFragment> hashMap = new HashMap<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -69,7 +75,6 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
             serverInfo = intent.getParcelableExtra("serverInfo");
         }
 
-        ;
         if (findViewById(R.id.flContent) != null) {
 
             // However, if we're being restored from a previous state,
@@ -80,12 +85,18 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
                 return;
             }
         }
+        fragmentManager = getSupportFragmentManager();
+        fragmentTransaction = fragmentManager.beginTransaction();
+        hashMap.put("/data",createNewFragment(listData,0));
+        hashMap.put("/model",createNewFragment(listModel,0));
+        fragmentTransaction.add(R.id.flContent,hashMap.get("/data"),"/data").commit();
         refreshListData();
     }
 
-    private CustomFragment createNewFragment(ArrayList<ItemExplorer> list) {
+    private CustomFragment createNewFragment(ArrayList<ItemExplorer> list,int idFragment) {
         CustomFragment firstFragment = new CustomFragment();
         Bundle args = new Bundle();
+        args.putInt("id",idFragment);
         args.putParcelableArrayList("list", list);
         // In case this activity was started with special instructions from an
         // Intent, pass the Intent's extras to the fragment as arguments
@@ -105,8 +116,7 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
         URL url;
         try {
             url = new URL(serverInfo + folderPath);
-            task = new CustomAsyncTask();
-            task.execute(url);
+            new CustomAsyncTask(folderPath).execute(url);
         } catch (Exception e) {
             e.printStackTrace();
             Snackbar.make(drawer, "Erreur de connexion", Snackbar.LENGTH_SHORT).show();
@@ -151,7 +161,7 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
                 drawer.openDrawer(GravityCompat.START);
                 return true;
             case R.id.refresh:
-                System.out.println("settings");
+
                 return true;
             default:
                 return super.onOptionsItemSelected(item);
@@ -162,24 +172,20 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
     public boolean onNavigationItemSelected(@NonNull MenuItem item) {
         int id = item.getItemId();
         //CLEAR FRAGMENT STACK
-        FragmentManager fragmentManager = getSupportFragmentManager();
-        //this will clear the back stack and displays no animation on the screen
+        fragmentTransaction = fragmentManager.beginTransaction();
         fragmentManager.popBackStackImmediate(null, FragmentManager.POP_BACK_STACK_INCLUSIVE);
+
         if (id == R.id.nav_data) {
-                /*isModelView = false;
-                refreshDataFromServer();*/
-            if (listData.isEmpty()) {
+            CustomFragment customFragment = hashMap.get("/data");
+            fragmentTransaction.replace(R.id.flContent,customFragment,"/data").commit();
+            if(listData.isEmpty()){
                 refreshListData();
-            } else {
-                getSupportFragmentManager().beginTransaction().replace(R.id.flContent, createNewFragment(listData)).commit();
             }
         } else if (id == R.id.nav_model) {
-                /*isModelView = true;
-                refreshModelFromServer();*/
-            if (listModel.isEmpty()) {
+            CustomFragment customFragment = hashMap.get("/model");
+            fragmentTransaction.replace(R.id.flContent,customFragment,"/model").commit();
+            if(listModel.isEmpty()){
                 refreshListModel();
-            } else {
-                getSupportFragmentManager().beginTransaction().replace(R.id.flContent, createNewFragment(listModel)).commit();
             }
         }
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.homeDrawerLayout);
@@ -209,8 +215,10 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
 
     private class CustomAsyncTask extends AsyncTask<URL, Void, ArrayList<ItemExplorer>> {
 
-        public CustomAsyncTask() {
+        private String tag;
 
+        public CustomAsyncTask(String tag){
+            this.tag = tag;
         }
 
         @Override
@@ -218,7 +226,6 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
             for (URL url : params) {
                 HttpURLConnection urlConnection = null;
                 try {
-                    System.out.println("download list.");
                     urlConnection = (HttpURLConnection) url.openConnection();
                     urlConnection.setConnectTimeout(3000); //set timeout to 3 seconds
                     urlConnection.setReadTimeout(3000);
@@ -228,11 +235,11 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
                     // Starts the query
                     urlConnection.connect();
                     if (urlConnection.getResponseCode() == 200) {
-                        return JsonUtil.toListofCustomItem(getStringFromInputStream(urlConnection.getInputStream()));
+                        return JsonUtil.toListofCustomItem(
+                                getStringFromInputStream(urlConnection.getInputStream())
+                        );
                     }
-                } catch (IOException e) {
-                    e.printStackTrace();
-                } catch (JSONException e) {
+                } catch (IOException | JSONException e) {
                     e.printStackTrace();
                 } finally {
                     if (urlConnection != null)
@@ -245,14 +252,13 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
         @Override
         protected void onPostExecute(ArrayList<ItemExplorer> s) {
             super.onPostExecute(s);
-            getSupportFragmentManager().beginTransaction().replace(R.id.flContent, createNewFragment(s)).commit();
-            task = null;
+            CustomFragment currentFragment = (CustomFragment) fragmentManager.findFragmentByTag(tag);
+            currentFragment.updateGridViewList(s);
         }
 
         @Override
         protected void onCancelled() {
             super.onCancelled();
-            task = null;
         }
     }
 
