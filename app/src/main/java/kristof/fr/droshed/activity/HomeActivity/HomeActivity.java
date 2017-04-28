@@ -1,11 +1,16 @@
 package kristof.fr.droshed.activity.HomeActivity;
 
+import android.animation.Animator;
+import android.animation.AnimatorListenerAdapter;
 import android.content.Intent;
 import android.content.res.Configuration;
 import android.graphics.Typeface;
 import android.os.AsyncTask;
+import android.os.Build;
 import android.os.Bundle;
+import android.os.Process;
 import android.support.annotation.NonNull;
+import android.support.constraint.ConstraintLayout;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.NavigationView;
 import android.support.design.widget.Snackbar;
@@ -19,6 +24,8 @@ import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.FrameLayout;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import org.json.JSONException;
@@ -50,14 +57,19 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
     private ArrayList<ItemExplorer> listData = new ArrayList<>();
     private ArrayList<ItemExplorer> listModel = new ArrayList<>();
     private HashMap<String,CustomFragment> hashMap = new HashMap<>();
+    private ProgressBar progressBar;
+    private FrameLayout frameLayout;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.home_activity);
+        System.out.println("onCreate");
         setToolbar();
         drawer = (DrawerLayout) findViewById(R.id.homeDrawerLayout);
         navigationView = (NavigationView) findViewById(R.id.nvView);
+        progressBar = (ProgressBar) findViewById(R.id.progressBar);
+        frameLayout = (FrameLayout) findViewById(R.id.flContent);
         toggle = new ActionBarDrawerToggle(this, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
         toggle.syncState();
         drawer.addDrawerListener(toggle);
@@ -79,7 +91,6 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
             // then we don't need to do anything and should return or else
             // we could end up with overlapping fragments.
             if (savedInstanceState != null) {
-
                 return;
             }
         }
@@ -89,6 +100,35 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
         hashMap.put("/model",createNewFragment(listModel,0));
         fragmentTransaction.add(R.id.flContent,hashMap.get("/data"),"/data").commit();
         refreshListData();
+    }
+
+    private void displayProgressBar(boolean show){
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB_MR2) {
+            int shortAnimTime = getResources().getInteger(android.R.integer.config_shortAnimTime);
+
+            frameLayout.setVisibility(show ? View.GONE : View.VISIBLE);
+            frameLayout.animate().setDuration(shortAnimTime).alpha(
+                    show ? 0 : 1).setListener(new AnimatorListenerAdapter() {
+                @Override
+                public void onAnimationEnd(Animator animation) {
+                    frameLayout.setVisibility(show ? View.GONE : View.VISIBLE);
+                }
+            });
+
+            progressBar.setVisibility(show ? View.VISIBLE : View.GONE);
+            progressBar.animate().setDuration(shortAnimTime).alpha(
+                    show ? 1 : 0).setListener(new AnimatorListenerAdapter() {
+                @Override
+                public void onAnimationEnd(Animator animation) {
+                    progressBar.setVisibility(show ? View.VISIBLE : View.GONE);
+                }
+            });
+        } else {
+            // The ViewPropertyAnimator APIs are not available, so simply show
+            // and hide the relevant UI components.
+            progressBar.setVisibility(show ? View.VISIBLE : View.GONE);
+            frameLayout.setVisibility(show ? View.GONE : View.VISIBLE);
+        }
     }
 
     private CustomFragment createNewFragment(ArrayList<ItemExplorer> list,int idFragment) {
@@ -179,14 +219,16 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
         if (id == R.id.nav_data) {
             CustomFragment customFragment = hashMap.get("/data");
             fragmentTransaction.replace(R.id.flContent,customFragment,"/data").commit();
-            if(!hashMap.get("/data").isAdded()) {
+            if(!customFragment.isLoaded()) {
                 refreshListData();
+                hashMap.put("/data",customFragment);
             }
         } else if (id == R.id.nav_model) {
             CustomFragment customFragment = hashMap.get("/model");
             fragmentTransaction.replace(R.id.flContent,customFragment,"/model").commit();
-            if(!hashMap.get("/model").isAdded()){
+            if(!customFragment.isLoaded()){
                 refreshListModel();
+                hashMap.put("/model",customFragment);
             }
         }
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.homeDrawerLayout);
@@ -217,9 +259,14 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
     private class CustomAsyncTask extends AsyncTask<URL, Void, ArrayList<ItemExplorer>> {
 
         private String tag;
-
         CustomAsyncTask(String tag){
             this.tag = tag;
+        }
+
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+            displayProgressBar(true);
         }
 
         @Override
@@ -254,11 +301,13 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
         protected void onPostExecute(ArrayList<ItemExplorer> s) {
             super.onPostExecute(s);
             hashMap.get(tag).updateGridViewList(s);
+            displayProgressBar(false);
         }
 
         @Override
         protected void onCancelled() {
             super.onCancelled();
+            displayProgressBar(false);
         }
     }
 

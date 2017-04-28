@@ -31,10 +31,16 @@ public class CustomFragment extends  android.support.v4.app.Fragment {
     private List<ItemExplorer> itemExplorerList = new ArrayList<>();
     private int idFragment;
     private CustomItemAdapter customAdapter;
+    private boolean isLoaded;
+
+    public boolean isLoaded() {
+        return isLoaded;
+    }
 
     @Nullable
     @Override
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, Bundle savedInstanceState) {
+        isLoaded = true;
         return inflater.inflate(R.layout.fragment_layout, container, false);
     }
 
