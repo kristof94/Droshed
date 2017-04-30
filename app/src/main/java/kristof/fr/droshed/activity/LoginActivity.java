@@ -21,7 +21,6 @@ import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.concurrent.ExecutionException;
 
 import kristof.fr.droshed.R;
 import kristof.fr.droshed.ServerInfo;
@@ -154,30 +153,18 @@ public class LoginActivity extends AppCompatActivity {
 
     private void manageSignIn(String user, String password) {
         String urlServer = urlView.getText().toString();
-        String urlLogin = urlServer + getString(R.string.loginPath);
-        String credentials = user + ":" + password;
-        String authBase64 = "Basic " + Base64.encodeToString(credentials.getBytes(), Base64.DEFAULT).replace("\n", "");
-        boolean isAuthenticate = launchAuthentication(urlLogin, authBase64);
-        if (isAuthenticate) {
-            if (checkBox.isChecked()) {
-                saveData(urlServer, user, password);
-            }
-            ServerInfo serverInfo = new ServerInfo(urlServer, authBase64);
-            startMainActivityAndExitLoginActivity(serverInfo);
-        } else {
-            Snackbar.make(parentView, getString(R.string.alertConnexionProblem), Snackbar.LENGTH_SHORT).show();
-        }
+        launchAuthentication(urlServer, user, password);
     }
 
-    private boolean launchAuthentication(String urlStr, String authBase64) {
-        mAuthTask = new UserLoginTask(authBase64);
+    private void launchAuthentication(String urlStr, String user, String authBase64) {
+        String urlLogin = urlStr + getString(R.string.loginPath);
+        mAuthTask = new UserLoginTask(urlStr, user, authBase64);
         URL url;
         try {
-            url = new URL(urlStr);
-            return mAuthTask.execute(url).get();
-        } catch (MalformedURLException | InterruptedException | ExecutionException e) {
+            url = new URL(urlLogin);
+            mAuthTask.execute(url);
+        } catch (MalformedURLException e) {
             mAuthTask.cancel(true);
-            return false;
         }
     }
 
@@ -217,71 +204,22 @@ public class LoginActivity extends AppCompatActivity {
             loginView.setVisibility(show ? View.GONE : View.VISIBLE);
         }
     }
-
-    /*
-    @Override
-    public Loader<Cursor> onCreateLoader(int i, Bundle bundle) {
-        return new CursorLoader(this,
-                // Retrieve data rows for the device user's 'profile' contact.
-                Uri.withAppendedPath(ContactsContract.Profile.CONTENT_URI,
-                        ContactsContract.Contacts.Data.CONTENT_DIRECTORY), ProfileQuery.PROJECTION,
-
-                // Select only email addresses.
-                ContactsContract.Contacts.Data.MIMETYPE +
-                        " = ?", new String[]{ContactsContract.CommonDataKinds.Email
-                .CONTENT_ITEM_TYPE},
-
-                // Show primary email addresses first. Note that there won't be
-                // a primary email address if the user hasn't specified one.
-                ContactsContract.Contacts.Data.IS_PRIMARY + " DESC");
-    }
-
-    @Override
-    public void onLoadFinished(Loader<Cursor> cursorLoader, Cursor cursor) {
-        List<String> emails = new ArrayList<>();
-        cursor.moveToFirst();
-        while (!cursor.isAfterLast()) {
-            emails.add(cursor.getString(ProfileQuery.ADDRESS));
-            cursor.moveToNext();
-        }
-        addEmailsToAutoComplete(emails);
-    }
-
-    @Override
-    public void onLoaderReset(Loader<Cursor> cursorLoader) {
-
-    }
-
-    private void addEmailsToAutoComplete(List<String> emailAddressCollection) {
-        //Create adapter to tell the AutoCompleteTextView what to show in its dropdown list.
-        ArrayAdapter<String> adapter =
-                new ArrayAdapter<>(LoginActivity.this,
-                        android.R.layout.simple_dropdown_item_1line, emailAddressCollection);
-        userView.setAdapter(adapter);
-    }
-
-    private interface ProfileQuery {
-        String[] PROJECTION = {
-                ContactsContract.CommonDataKinds.Email.ADDRESS,
-                ContactsContract.CommonDataKinds.Email.IS_PRIMARY,
-        };
-        int ADDRESS = 0;
-    }*/
-
-    /**
-     To here
-     */
-
     /**
      * Represents an asynchronous login/registration task used to authenticate
      * the user.
      */
     private class UserLoginTask extends AsyncTask<URL, Void, Boolean> {
 
+        private final String url;
+        private final String user;
         private final String authBase64;
+        private final String password;
 
-        UserLoginTask(String authBase64) {
-            this.authBase64 = authBase64;
+        UserLoginTask(String url, String user, String password) {
+            this.url = url;
+            this.user = user;
+            this.password = password;
+            this.authBase64 = "Basic " + Base64.encodeToString((user + ":" + password).getBytes(), Base64.DEFAULT).replace("\n", "");
         }
 
         @Override
@@ -318,6 +256,15 @@ public class LoginActivity extends AppCompatActivity {
         @Override
         protected void onPostExecute(final Boolean success) {
             mAuthTask = null;
+            if (success) {
+                if (checkBox.isChecked()) {
+                    saveData(url, user, password);
+                }
+                ServerInfo serverInfo = new ServerInfo(url, authBase64);
+                startMainActivityAndExitLoginActivity(serverInfo);
+            } else {
+                Snackbar.make(parentView, getString(R.string.alertConnexionProblem), Snackbar.LENGTH_SHORT).show();
+            }
             showProgress(false);
         }
 
