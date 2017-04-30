@@ -14,6 +14,7 @@ import android.widget.GridView;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import kristof.fr.droshed.Explorer.FileItemExplorer;
 import kristof.fr.droshed.Explorer.FolderItemExplorer;
@@ -29,8 +30,9 @@ import kristof.fr.droshed.custom.CustomItemAdapter;
 public class CustomFragment extends  android.support.v4.app.Fragment {
 
     private List<ItemExplorer> itemExplorerList = new ArrayList<>();
-    private int idFragment;
+    private AtomicInteger idFragment = new AtomicInteger(0);
     private CustomItemAdapter customAdapter;
+    private String path;
     private boolean isLoaded;
 
     public boolean isLoaded() {
@@ -41,7 +43,40 @@ public class CustomFragment extends  android.support.v4.app.Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, Bundle savedInstanceState) {
         isLoaded = true;
-        return inflater.inflate(R.layout.fragment_layout, container, false);
+        View view = inflater.inflate(R.layout.fragment_layout, container, false);
+        GridView gridView = (GridView) view.findViewById(R.id.gridView);
+        gridView.setOnItemClickListener((parent, view1, position, id) -> {
+            ItemExplorer itemExplorer = (ItemExplorer) parent.getItemAtPosition(position);
+            if (itemExplorer instanceof FileItemExplorer) {
+                //Snackbar.make(view, itemExplorer.getName(), Snackbar.LENGTH_SHORT);
+            }
+            if (itemExplorer instanceof FolderItemExplorer) {
+                FolderItemExplorer folderItemExplorer = (FolderItemExplorer) itemExplorer;
+                CustomFragment firstFragment = new CustomFragment();
+                Bundle args = new Bundle();
+                //args.putInt("id",idFragment);
+                args.putString("path",itemExplorer.getName());
+                args.putParcelableArrayList("list",folderItemExplorer.getItemExplorerList());
+                // In case this activity was started with special instructions from an
+                // Intent, pass the Intent's extras to the fragment as arguments
+                firstFragment.setArguments(args);
+                // Add the fragment to the 'fragment_container' FrameLayout
+                // support package FragmentManager (getSupportFragmentManager).
+                replaceFragment(firstFragment,getActivity());
+            }
+        });
+        if (getArguments() != null && idFragment.getAndIncrement()==0) {
+            Bundle args = getArguments();
+            if (args.containsKey("list")) {
+                path = args.getString("path");
+                //idFragment = args.getInt("id");
+                itemExplorerList.addAll(args.getParcelableArrayList("list"));
+            }
+        }
+        System.out.println(path);
+        customAdapter = new CustomItemAdapter(getActivity(),itemExplorerList);
+        gridView.setAdapter(customAdapter);
+        return view;
     }
 
     public static void replaceFragment (Fragment fragment, FragmentActivity activity){
@@ -61,41 +96,5 @@ public class CustomFragment extends  android.support.v4.app.Fragment {
         itemExplorerList.clear();
         itemExplorerList.addAll(s);
         customAdapter.notifyDataSetChanged();
-    }
-
-    @Override
-    public void onViewCreated(View view, @Nullable Bundle savedInstanceState) {
-        super.onViewCreated(view, savedInstanceState);
-        GridView gridView = (GridView) view.findViewById(R.id.gridView);
-        gridView.setOnItemClickListener((parent, view1, position, id) -> {
-            ItemExplorer itemExplorer = (ItemExplorer) parent.getItemAtPosition(position);
-            if (itemExplorer instanceof FileItemExplorer) {
-                Snackbar.make(getView(), itemExplorer.getName(), Snackbar.LENGTH_SHORT);
-            }
-            if (itemExplorer instanceof FolderItemExplorer) {
-                FolderItemExplorer folderItemExplorer = (FolderItemExplorer) itemExplorer;
-                CustomFragment firstFragment = new CustomFragment();
-                Bundle args = new Bundle();
-                args.putInt("id",idFragment);
-                args.putParcelableArrayList("list",folderItemExplorer.getItemExplorerList());
-                // In case this activity was started with special instructions from an
-                // Intent, pass the Intent's extras to the fragment as arguments
-                firstFragment.setArguments(args);
-                // Add the fragment to the 'fragment_container' FrameLayout
-                // support package FragmentManager (getSupportFragmentManager).
-                replaceFragment(firstFragment,getActivity());
-            }
-        });
-        if (getArguments() != null) {
-            Bundle args = getArguments();
-            if (args.containsKey("list")) {
-                idFragment = args.getInt("id");
-                itemExplorerList.addAll(args.getParcelableArrayList("list"));
-                customAdapter = new CustomItemAdapter(getActivity(),itemExplorerList);
-                gridView.setAdapter(customAdapter);
-            }
-        }
-
-
     }
 }

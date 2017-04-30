@@ -8,9 +8,7 @@ import android.graphics.Typeface;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.Process;
 import android.support.annotation.NonNull;
-import android.support.constraint.ConstraintLayout;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.NavigationView;
 import android.support.design.widget.Snackbar;
@@ -38,6 +36,7 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import kristof.fr.droshed.Explorer.ItemExplorer;
 import kristof.fr.droshed.JsonUtil;
@@ -59,6 +58,7 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
     private HashMap<String,CustomFragment> hashMap = new HashMap<>();
     private ProgressBar progressBar;
     private FrameLayout frameLayout;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -136,6 +136,7 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
         Bundle args = new Bundle();
         args.putInt("id",idFragment);
         args.putParcelableArrayList("list", list);
+        args.putString("path","root");
         // In case this activity was started with special instructions from an
         // Intent, pass the Intent's extras to the fragment as arguments
         firstFragment.setArguments(args);
@@ -259,6 +260,7 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
     private class CustomAsyncTask extends AsyncTask<URL, Void, ArrayList<ItemExplorer>> {
 
         private String tag;
+
         CustomAsyncTask(String tag){
             this.tag = tag;
         }
