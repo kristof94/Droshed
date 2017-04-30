@@ -96,8 +96,8 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
         }
         fragmentManager = getSupportFragmentManager();
         fragmentTransaction = fragmentManager.beginTransaction();
-        hashMap.put("/data",createNewFragment(listData,0));
-        hashMap.put("/model",createNewFragment(listModel,0));
+        hashMap.put("/data",createNewFragment(listData,0,"data"));
+        hashMap.put("/model",createNewFragment(listModel,0,"model"));
         fragmentTransaction.add(R.id.flContent,hashMap.get("/data"),"/data").commit();
         refreshListData();
     }
@@ -131,12 +131,12 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
         }
     }
 
-    private CustomFragment createNewFragment(ArrayList<ItemExplorer> list,int idFragment) {
+    private CustomFragment createNewFragment(ArrayList<ItemExplorer> list,int idFragment, String root) {
         CustomFragment firstFragment = new CustomFragment();
         Bundle args = new Bundle();
         args.putInt("id",idFragment);
         args.putParcelableArrayList("list", list);
-        args.putString("path","root");
+        args.putString("path",root);
         // In case this activity was started with special instructions from an
         // Intent, pass the Intent's extras to the fragment as arguments
         firstFragment.setArguments(args);

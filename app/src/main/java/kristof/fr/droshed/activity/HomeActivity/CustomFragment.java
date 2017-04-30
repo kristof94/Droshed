@@ -55,7 +55,7 @@ public class CustomFragment extends  android.support.v4.app.Fragment {
                 CustomFragment firstFragment = new CustomFragment();
                 Bundle args = new Bundle();
                 //args.putInt("id",idFragment);
-                args.putString("path",itemExplorer.getName());
+                args.putString("path",path+"/"+itemExplorer.getName());
                 args.putParcelableArrayList("list",folderItemExplorer.getItemExplorerList());
                 // In case this activity was started with special instructions from an
                 // Intent, pass the Intent's extras to the fragment as arguments
