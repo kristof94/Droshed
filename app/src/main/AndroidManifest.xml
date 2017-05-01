@@ -25,7 +25,8 @@
             android:label="@string/title_activity_login" />
         <activity
             android:name=".activity.HomeActivity.HomeActivity"
-            android:theme="@style/AppTheme"></activity>
+            android:theme="@style/AppTheme" />
+        <activity android:name=".activity.ModelActivity.ModelActivity"></activity>
     </application>
 
 </manifest>

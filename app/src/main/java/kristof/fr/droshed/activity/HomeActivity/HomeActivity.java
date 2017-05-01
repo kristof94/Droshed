@@ -40,6 +40,8 @@ import java.util.HashMap;
 import kristof.fr.droshed.Explorer.FileItemExplorer;
 import kristof.fr.droshed.Explorer.ItemExplorer;
 import kristof.fr.droshed.JsonUtil;
+import kristof.fr.droshed.Util;
+import kristof.fr.droshed.activity.ModelActivity.ModelActivity;
 import kristof.fr.droshed.R;
 import kristof.fr.droshed.ServerInfo;
 import kristof.fr.droshed.custom.FontCache;
@@ -58,6 +60,7 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
     private HashMap<String,CustomFragment> hashMap = new HashMap<>();
     private ProgressBar progressBar;
     private FrameLayout frameLayout;
+    private static final int PICK_FILE = 1;  // The request code
 
 
     @Override
@@ -265,8 +268,31 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
     }
 
     @Override
-    public void manageItem(FileItemExplorer fileItemExplorer,String path) {
-        Snackbar.make(drawer,path,Snackbar.LENGTH_SHORT).show();
+    public void manageItem(String path) {
+        startModelActivity(serverInfo,path);
+    }
+
+    private void startModelActivity(ServerInfo serverInfo,String path) {
+        Intent mainIntent = new Intent(HomeActivity.this, ModelActivity.class);
+        Bundle bundle = new Bundle();
+        bundle.putParcelable("serverInfo",serverInfo);
+        bundle.putString("path",path);
+        mainIntent.putExtras(bundle);
+        startActivityForResult(mainIntent,PICK_FILE);
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        // Check which request we're responding to
+        if (requestCode == PICK_FILE) {
+            // Make sure the request was successful
+            if (resultCode == RESULT_OK) {
+                // The user picked a contact.
+                // The Intent's data Uri identifies which contact was selected.
+
+                // Do something with the contact here (bigger example below)
+            }
+        }
     }
 
     private class CustomAsyncTask extends AsyncTask<URL, Void, ArrayList<ItemExplorer>> {
@@ -303,7 +329,7 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
                     urlConnection.connect();
                     if (urlConnection.getResponseCode() == 200) {
                         return JsonUtil.toListofCustomItem(
-                                getStringFromInputStream(urlConnection.getInputStream())
+                                Util.getStringFromInputStream(urlConnection.getInputStream())
                         );
                     }
                 } catch (IOException | JSONException e) {
@@ -319,7 +345,9 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
         @Override
         protected void onPostExecute(ArrayList<ItemExplorer> s) {
             super.onPostExecute(s);
-            if(s!=null) {
+            if(s==null) {
+                Snackbar.make(drawer, "Erreur de connexion", Snackbar.LENGTH_SHORT).show();
+            }else{
                 hashMap.get(tag).updateGridViewList(s);
             }
             displayProgressBar(false);
@@ -330,16 +358,5 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
             super.onCancelled();
             displayProgressBar(false);
         }
-    }
-
-    private static String getStringFromInputStream(InputStream inputStream) throws IOException {
-        BufferedReader in = new BufferedReader(new InputStreamReader(
-                inputStream));
-        StringBuilder sb = new StringBuilder();
-        String inputLine;
-        while ((inputLine = in.readLine()) != null)
-            sb.append(inputLine);
-        in.close();
-        return sb.toString();
     }
 }
