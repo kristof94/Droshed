@@ -77,8 +77,24 @@ def checkAuthentifation():
 @app.route('/', methods=['PUT'], defaults={'path': ''})
 @app.route('/<path:path>', methods=['PUT'])
 @authenticated
-def catch_all(path):
+def getListOfFolder(path):
     return getResponseWithJson(path)
+
+@app.route('/', methods=['GET'], defaults={'path': ''})
+@app.route('/<path:path>', methods=['GET'])
+@authenticated
+def getFileContent(path):
+	if(os.path.isfile(path)):
+		jsonData = {'name': os.path.basename(path)}
+		with open(path, "r") as file:
+    			lines = file.read().split("\n")		
+        	jsonData['content'] = ''.join(lines)
+		return app.response_class(
+        	response=json.dumps(jsonData, indent=2),
+        	status=200,
+        	mimetype='application/json')
+	else:
+		return Response('Not found', 404, {'WWW-Authenticate': 'Bad Path."'})
 
 @app.route("/model",methods=['GET'])
 @authenticated

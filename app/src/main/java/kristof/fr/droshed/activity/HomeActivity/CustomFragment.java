@@ -44,7 +44,7 @@ public class CustomFragment extends  android.support.v4.app.Fragment {
 
     public interface ManagerHashMap {
         public void addToHashMap(CustomFragment customFragment);
-        public void manageItem(FileItemExplorer fileItemExplorer);
+        public void manageItem(FileItemExplorer fileItemExplorer, String path);
     }
 
     public boolean isLoaded() {
@@ -86,7 +86,8 @@ public class CustomFragment extends  android.support.v4.app.Fragment {
             ItemExplorer itemExplorer = (ItemExplorer) parent.getItemAtPosition(position);
             if (itemExplorer instanceof FileItemExplorer) {
                 FileItemExplorer fileItemExplorer = (FileItemExplorer) itemExplorer;
-                link.manageItem(fileItemExplorer);
+                Snackbar.make(view1,fileItemExplorer.getName(),Snackbar.LENGTH_SHORT).show();
+                link.manageItem(fileItemExplorer,path);
             }
             if (itemExplorer instanceof FolderItemExplorer) {
                 FolderItemExplorer folderItemExplorer = (FolderItemExplorer) itemExplorer;

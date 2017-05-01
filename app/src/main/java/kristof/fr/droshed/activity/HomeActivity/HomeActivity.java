@@ -265,8 +265,8 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
     }
 
     @Override
-    public void manageItem(FileItemExplorer fileItemExplorer) {
-
+    public void manageItem(FileItemExplorer fileItemExplorer,String path) {
+        Snackbar.make(drawer,path,Snackbar.LENGTH_SHORT).show();
     }
 
     private class CustomAsyncTask extends AsyncTask<URL, Void, ArrayList<ItemExplorer>> {
