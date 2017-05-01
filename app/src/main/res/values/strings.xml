@@ -32,4 +32,8 @@
     <!-- Strings related to left side menu bar-->
     <string name="data">Feuilles de calcul</string>
     <string name="model">Modèles</string>
+
+    <string name="dataFolder">/data</string>
+    <string name="modelFolder">/model</string>
+
 </resources>

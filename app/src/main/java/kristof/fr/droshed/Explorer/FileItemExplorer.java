@@ -15,7 +15,7 @@ public class FileItemExplorer extends ItemExplorer{
 
     @Override
     public String toString() {
-        return type+" : "+name;
+        return name;
     }
 
     @Override

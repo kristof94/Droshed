@@ -36,15 +36,15 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.concurrent.atomic.AtomicInteger;
 
+import kristof.fr.droshed.Explorer.FileItemExplorer;
 import kristof.fr.droshed.Explorer.ItemExplorer;
 import kristof.fr.droshed.JsonUtil;
 import kristof.fr.droshed.R;
 import kristof.fr.droshed.ServerInfo;
 import kristof.fr.droshed.custom.FontCache;
 
-public class HomeActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener {
+public class HomeActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener,CustomFragment.ManagerHashMap {
 
     private DrawerLayout drawer;
     private Toolbar toolbar;
@@ -96,8 +96,8 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
         }
         fragmentManager = getSupportFragmentManager();
         fragmentTransaction = fragmentManager.beginTransaction();
-        hashMap.put("/data",createNewFragment(listData,0,"data"));
-        hashMap.put("/model",createNewFragment(listModel,0,"model"));
+        hashMap.put("/data",createNewFragment(listData,0,"/data"));
+        hashMap.put("/model",createNewFragment(listModel,0,"/model"));
         fragmentTransaction.add(R.id.flContent,hashMap.get("/data"),"/data").commit();
         refreshListData();
     }
@@ -199,12 +199,6 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
             case android.R.id.home:
                 drawer.openDrawer(GravityCompat.START);
                 return true;
-            case R.id.refresh:
-                if(hashMap.get("/data").isAdded())
-                    refreshListData();
-                if(hashMap.get("/model").isAdded())
-                    refreshListModel();
-                return true;
             default:
                 return super.onOptionsItemSelected(item);
         }
@@ -257,12 +251,35 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
         return true;
     }
 
+    @Override
+    public void addToHashMap(CustomFragment customFragment) {
+        hashMap.put(customFragment.getPath(),customFragment);
+        URL url;
+        try {
+            url = new URL(serverInfo + customFragment.getPath());
+            new CustomAsyncTask(customFragment.getPath(),"PUT").execute(url);
+        } catch (Exception e) {
+            e.printStackTrace();
+            Snackbar.make(drawer, "Erreur de connexion", Snackbar.LENGTH_SHORT).show();
+        }
+    }
+
+    @Override
+    public void manageItem(FileItemExplorer fileItemExplorer) {
+
+    }
+
     private class CustomAsyncTask extends AsyncTask<URL, Void, ArrayList<ItemExplorer>> {
 
         private String tag;
-
+        private String method = "GET";
         CustomAsyncTask(String tag){
             this.tag = tag;
+        }
+
+        CustomAsyncTask(String tag,String method){
+            this.tag = tag;
+            this.method = "PUT";
         }
 
         @Override
@@ -280,7 +297,7 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
                     urlConnection.setConnectTimeout(3000); //set timeout to 3 seconds
                     urlConnection.setReadTimeout(3000);
                     urlConnection.setRequestProperty("Authorization", serverInfo.getAuthBase64());
-                    urlConnection.setRequestMethod("GET");
+                    urlConnection.setRequestMethod(method);
                     urlConnection.setDoInput(true);
                     // Starts the query
                     urlConnection.connect();
@@ -302,7 +319,9 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
         @Override
         protected void onPostExecute(ArrayList<ItemExplorer> s) {
             super.onPostExecute(s);
-            hashMap.get(tag).updateGridViewList(s);
+            if(s!=null) {
+                hashMap.get(tag).updateGridViewList(s);
+            }
             displayProgressBar(false);
         }
 

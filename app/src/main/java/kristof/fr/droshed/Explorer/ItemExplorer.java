@@ -25,7 +25,7 @@ public abstract class ItemExplorer implements Parcelable{
     }
 
     public String getName() {
-        return name;
+        return toString();
     }
 
     public int getLayoutID() {

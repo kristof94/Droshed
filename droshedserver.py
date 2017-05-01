@@ -64,24 +64,28 @@ def authenticated(f):
     @wraps(f)
     def decorated(*args, **kwargs):
         auth = request.authorization
-        print(app.config['users'].get(auth.username))
-        print(auth.password)
         if not auth or app.config['users'].get(auth.username) != auth.password:
             return Response('Authentication error', 401,{app.config['users'].get(auth.username): auth.password})
         return f(*args, **kwargs)
     return decorated
 
-@app.route("/login")
+@app.route("/login",methods=['GET'])
 @authenticated
 def checkAuthentifation():
 	return Response('Authentication Ok', 200, {'WWW-Authenticate': 'Basic realm="Login Required accepted"'})
 
-@app.route("/model")
+@app.route('/', methods=['PUT'], defaults={'path': ''})
+@app.route('/<path:path>', methods=['PUT'])
+@authenticated
+def catch_all(path):
+    return getResponseWithJson(path)
+
+@app.route("/model",methods=['GET'])
 @authenticated
 def getlistmodel():
 	return getResponseWithJson("model")
 
-@app.route("/data")
+@app.route("/data",methods=['GET'])
 @authenticated
 def getlistdata():
 	return getResponseWithJson("data")
