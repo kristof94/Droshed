@@ -279,13 +279,14 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
 
         private String tag;
         private String method = "GET";
+
         CustomAsyncTask(String tag){
             this.tag = tag;
         }
 
-        CustomAsyncTask(String tag,String method){
+        CustomAsyncTask(String tag, String method) {
             this.tag = tag;
-            this.method = "PUT";
+            this.method = method;
         }
 
         @Override
