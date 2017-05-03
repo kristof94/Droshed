@@ -6,7 +6,6 @@ import android.content.Intent;
 import android.content.res.Configuration;
 import android.graphics.Typeface;
 import android.os.AsyncTask;
-import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
@@ -25,32 +24,24 @@ import android.view.View;
 import android.widget.FrameLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
-
 import org.json.JSONException;
-
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
-
-import kristof.fr.droshed.Explorer.FileItemExplorer;
 import kristof.fr.droshed.Explorer.ItemExplorer;
 import kristof.fr.droshed.JsonUtil;
-import kristof.fr.droshed.Util;
-import kristof.fr.droshed.activity.ModelActivity.ModelActivity;
 import kristof.fr.droshed.R;
 import kristof.fr.droshed.ServerInfo;
+import kristof.fr.droshed.Util;
+import kristof.fr.droshed.activity.ModelActivity.ModelActivity;
 import kristof.fr.droshed.custom.FontCache;
 
 public class HomeActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener,CustomFragment.ManagerHashMap {
 
     private DrawerLayout drawer;
     private Toolbar toolbar;
-    private NavigationView navigationView;
     private ActionBarDrawerToggle toggle;
     private ServerInfo serverInfo;
     private FragmentManager fragmentManager;
@@ -62,14 +53,13 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
     private FrameLayout frameLayout;
     private static final int PICK_FILE = 1;  // The request code
 
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.home_activity);
         setToolbar();
         drawer = (DrawerLayout) findViewById(R.id.homeDrawerLayout);
-        navigationView = (NavigationView) findViewById(R.id.nvView);
+        NavigationView navigationView = (NavigationView) findViewById(R.id.nvView);
         progressBar = (ProgressBar) findViewById(R.id.progressBar);
         frameLayout = (FrameLayout) findViewById(R.id.flContent);
         toggle = new ActionBarDrawerToggle(this, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
@@ -280,10 +270,7 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
         if (requestCode == PICK_FILE) {
             // Make sure the request was successful
             if (resultCode == RESULT_OK) {
-                // The user picked a contact.
-                // The Intent's data Uri identifies which contact was selected.
-
-                // Do something with the contact here (bigger example below)
+                //TODO
             }
         }
     }
