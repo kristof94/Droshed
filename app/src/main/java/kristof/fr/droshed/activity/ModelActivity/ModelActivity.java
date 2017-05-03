@@ -5,30 +5,20 @@ import android.animation.AnimatorListenerAdapter;
 import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Build;
+import android.os.Bundle;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
-import android.os.Bundle;
 import android.view.View;
 import android.widget.GridView;
 import android.widget.ProgressBar;
 
-import org.json.JSONException;
-
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.logging.Handler;
 
-import kristof.fr.droshed.Explorer.FileItemExplorer;
-import kristof.fr.droshed.Explorer.ItemExplorer;
-import kristof.fr.droshed.JsonUtil;
 import kristof.fr.droshed.R;
 import kristof.fr.droshed.ServerInfo;
 import kristof.fr.droshed.Util;
-import kristof.fr.droshed.activity.HomeActivity.HomeActivity;
-import kristof.fr.droshed.activity.LoginActivity;
-import kristof.fr.droshed.activity.SplashActivity;
 
 public class ModelActivity extends AppCompatActivity {
 

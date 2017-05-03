@@ -67,7 +67,6 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.home_activity);
-        System.out.println("onCreate");
         setToolbar();
         drawer = (DrawerLayout) findViewById(R.id.homeDrawerLayout);
         navigationView = (NavigationView) findViewById(R.id.nvView);
@@ -85,7 +84,8 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
 
         Intent intent = getIntent();
         if (intent != null) {
-            serverInfo = intent.getParcelableExtra("serverInfo");
+            Bundle bundle = intent.getExtras();
+            serverInfo = bundle.containsKey("serverInfo") ? bundle.getParcelable("serverInfo") : null;
         }
 
         if (findViewById(R.id.flContent) != null) {
@@ -106,32 +106,25 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
     }
 
     private void displayProgressBar(boolean show){
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB_MR2) {
-            int shortAnimTime = getResources().getInteger(android.R.integer.config_shortAnimTime);
+        int shortAnimTime = getResources().getInteger(android.R.integer.config_shortAnimTime);
 
-            frameLayout.setVisibility(show ? View.GONE : View.VISIBLE);
-            frameLayout.animate().setDuration(shortAnimTime).alpha(
-                    show ? 0 : 1).setListener(new AnimatorListenerAdapter() {
-                @Override
-                public void onAnimationEnd(Animator animation) {
-                    frameLayout.setVisibility(show ? View.GONE : View.VISIBLE);
-                }
-            });
+        frameLayout.setVisibility(show ? View.GONE : View.VISIBLE);
+        frameLayout.animate().setDuration(shortAnimTime).alpha(
+                show ? 0 : 1).setListener(new AnimatorListenerAdapter() {
+            @Override
+            public void onAnimationEnd(Animator animation) {
+                frameLayout.setVisibility(show ? View.GONE : View.VISIBLE);
+            }
+        });
 
-            progressBar.setVisibility(show ? View.VISIBLE : View.GONE);
-            progressBar.animate().setDuration(shortAnimTime).alpha(
-                    show ? 1 : 0).setListener(new AnimatorListenerAdapter() {
-                @Override
-                public void onAnimationEnd(Animator animation) {
-                    progressBar.setVisibility(show ? View.VISIBLE : View.GONE);
-                }
-            });
-        } else {
-            // The ViewPropertyAnimator APIs are not available, so simply show
-            // and hide the relevant UI components.
-            progressBar.setVisibility(show ? View.VISIBLE : View.GONE);
-            frameLayout.setVisibility(show ? View.GONE : View.VISIBLE);
-        }
+        progressBar.setVisibility(show ? View.VISIBLE : View.GONE);
+        progressBar.animate().setDuration(shortAnimTime).alpha(
+                show ? 1 : 0).setListener(new AnimatorListenerAdapter() {
+            @Override
+            public void onAnimationEnd(Animator animation) {
+                progressBar.setVisibility(show ? View.VISIBLE : View.GONE);
+            }
+        });
     }
 
     private CustomFragment createNewFragment(ArrayList<ItemExplorer> list,int idFragment, String root) {

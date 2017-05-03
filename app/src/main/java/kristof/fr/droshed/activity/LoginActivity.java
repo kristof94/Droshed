@@ -41,19 +41,12 @@ public class LoginActivity extends AppCompatActivity {
     private SharedPreferences sharedPreferences;
     private UserLoginTask mAuthTask;
 
-
-    /**
-     * Main method to init all Graphic element like button, text view.
-     * Also use to retrieve saved data if saved data were saved.
-     *
-     * @param savedInstanceState
-     */
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
         initUiElements();
-        if (sharedPreferences.getAll().size() == 3) {
+        if (sharedPreferences!=null && sharedPreferences.getAll().size() == 3) {
             retrieveSavedData();
         }
     }
@@ -93,7 +86,9 @@ public class LoginActivity extends AppCompatActivity {
 
     private void startMainActivityAndExitLoginActivity(ServerInfo serverInfo) {
         Intent mainIntent = new Intent(LoginActivity.this, HomeActivity.class);
-        mainIntent.putExtra("serverInfo", serverInfo);
+        Bundle bundle = new Bundle();
+        bundle.putParcelable("serverInfo",serverInfo);
+        mainIntent.putExtras(bundle);
         startActivity(mainIntent);
         finish();
     }
@@ -108,7 +103,6 @@ public class LoginActivity extends AppCompatActivity {
         if (mAuthTask != null) {
             return;
         }
-
         // Reset errors.
         userView.setError(null);
         passwordView.setError(null);
@@ -177,32 +171,25 @@ public class LoginActivity extends AppCompatActivity {
         // On Honeycomb MR2 we have the ViewPropertyAnimator APIs, which allow
         // for very easy animations. If available, use these APIs to fade-in
         // the progress spinner.
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB_MR2) {
-            int shortAnimTime = getResources().getInteger(android.R.integer.config_shortAnimTime);
+        int shortAnimTime = getResources().getInteger(android.R.integer.config_shortAnimTime);
 
-            loginView.setVisibility(show ? View.GONE : View.VISIBLE);
-            loginView.animate().setDuration(shortAnimTime).alpha(
-                    show ? 0 : 1).setListener(new AnimatorListenerAdapter() {
-                @Override
-                public void onAnimationEnd(Animator animation) {
-                    loginView.setVisibility(show ? View.GONE : View.VISIBLE);
-                }
-            });
+        loginView.setVisibility(show ? View.GONE : View.VISIBLE);
+        loginView.animate().setDuration(shortAnimTime).alpha(
+                show ? 0 : 1).setListener(new AnimatorListenerAdapter() {
+            @Override
+            public void onAnimationEnd(Animator animation) {
+                loginView.setVisibility(show ? View.GONE : View.VISIBLE);
+            }
+        });
 
-            progressView.setVisibility(show ? View.VISIBLE : View.GONE);
-            progressView.animate().setDuration(shortAnimTime).alpha(
-                    show ? 1 : 0).setListener(new AnimatorListenerAdapter() {
-                @Override
-                public void onAnimationEnd(Animator animation) {
-                    progressView.setVisibility(show ? View.VISIBLE : View.GONE);
-                }
-            });
-        } else {
-            // The ViewPropertyAnimator APIs are not available, so simply show
-            // and hide the relevant UI components.
-            progressView.setVisibility(show ? View.VISIBLE : View.GONE);
-            loginView.setVisibility(show ? View.GONE : View.VISIBLE);
-        }
+        progressView.setVisibility(show ? View.VISIBLE : View.GONE);
+        progressView.animate().setDuration(shortAnimTime).alpha(
+                show ? 1 : 0).setListener(new AnimatorListenerAdapter() {
+            @Override
+            public void onAnimationEnd(Animator animation) {
+                progressView.setVisibility(show ? View.VISIBLE : View.GONE);
+            }
+        });
     }
     /**
      * Represents an asynchronous login/registration task used to authenticate
