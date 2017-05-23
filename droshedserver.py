@@ -64,6 +64,7 @@ def authenticated(f):
     @wraps(f)
     def decorated(*args, **kwargs):
         auth = request.authorization
+        print(auth)
         if not auth or app.config['users'].get(auth.username) != auth.password:
             return Response('Authentication error', 401,{app.config['users'].get(auth.username): auth.password})
         return f(*args, **kwargs)

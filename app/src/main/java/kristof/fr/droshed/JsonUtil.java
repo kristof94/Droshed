@@ -27,7 +27,8 @@ public class JsonUtil {
         JSONArray jsonArray = json.getJSONArray("children");
         for(int i=0;i<jsonArray.length();i++){
             JSONObject jsonLine = jsonArray.getJSONObject(i);
-            list.add(createItemExplorer(jsonLine));
+            ItemExplorer itemExplorer = createItemExplorer(jsonLine);
+            list.add(itemExplorer);
         }
         return list;
     }
@@ -35,12 +36,13 @@ public class JsonUtil {
     private static ItemExplorer createItemExplorer(JSONObject json) throws JSONException {
         String name = json.getString("name");
         String type = json.getString("type");
+        ItemExplorer itemExplorer = null;
         if(type.equals("file"))
-            return new FileItemExplorer(type,name,R.layout.custom_item_layout);
+            itemExplorer = new FileItemExplorer(type,name,R.layout.custom_item_layout,null);
         else if (type.equals("directory")){
-            return new FolderItemExplorer(type,name,R.layout.custom_item_folder_layout,toListofCustomItemfromJsonObject(json));
+            itemExplorer =  new FolderItemExplorer(type,name,R.layout.custom_item_folder_layout,toListofCustomItemfromJsonObject(json));
         }
-        else return null;
+        return itemExplorer;
     }
 
 

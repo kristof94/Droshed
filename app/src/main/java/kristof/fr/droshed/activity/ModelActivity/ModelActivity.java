@@ -8,6 +8,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.GridView;
 import android.widget.ProgressBar;
@@ -16,9 +17,11 @@ import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URL;
 
+import kristof.fr.droshed.Explorer.FileItemExplorer;
 import kristof.fr.droshed.R;
 import kristof.fr.droshed.ServerInfo;
 import kristof.fr.droshed.Util;
+import kristof.fr.droshed.activity.HomeActivity.HomeActivity;
 
 public class ModelActivity extends AppCompatActivity {
 
@@ -27,30 +30,54 @@ public class ModelActivity extends AppCompatActivity {
     private ServerInfo serverInfo;
     private String path;
     private View drawer;
+    private android.support.v7.widget.Toolbar toolbar;
+    private FileItemExplorer fileItemExplorer;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_model);
+        /*Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar3);
+        setSupportActionBar(toolbar);
+        if(getSupportActionBar()!=null){
+            getSupportActionBar().setDisplayShowTitleEnabled(false);
+            getSupportActionBar().setDisplayShowHomeEnabled(true);
+            getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+            System.out.println(getSupportActionBar());
+
+        }else{
+            System.out.println(getSupportActionBar());
+        }*/
         gridView = (GridView) findViewById(R.id.gridViewModel);
         progressBar = (ProgressBar) findViewById(R.id.progressBar);
         drawer = findViewById(R.id.drawer);
         Intent intent = getIntent();
-        if(intent!=null){
+        if (intent != null) {
             Bundle bundle = intent.getExtras();
-            if(bundle!=null){
-                if(bundle.containsKey("serverInfo")){
+            if (bundle != null) {
+                if (bundle.containsKey("serverInfo")) {
                     serverInfo = bundle.getParcelable("serverInfo");
                     path = bundle.getString("path");
-                    if(serverInfo!=null && path!=null){
-                        downloadXML(serverInfo+path);
+                    fileItemExplorer = bundle.getParcelable("fileItemExplorer");
+                    if (serverInfo != null && path != null && fileItemExplorer.getContent() == null) {
+                        downloadXMLAndParseFile(serverInfo + path);
                     }
                 }
             }
         }
     }
 
-    private void downloadXML(String urlPath){
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case android.R.id.home:
+                return true;
+            default:
+                return super.onOptionsItemSelected(item);
+        }
+    }
+
+    private void downloadXMLAndParseFile(String urlPath) {
         URL url;
         try {
             url = new URL(urlPath);
@@ -60,7 +87,7 @@ public class ModelActivity extends AppCompatActivity {
         }
     }
 
-    private void displayProgressBar(boolean show){
+    private void displayProgressBar(boolean show) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB_MR2) {
             int shortAnimTime = getResources().getInteger(android.R.integer.config_shortAnimTime);
 
@@ -87,6 +114,19 @@ public class ModelActivity extends AppCompatActivity {
             progressBar.setVisibility(show ? View.VISIBLE : View.GONE);
             gridView.setVisibility(show ? View.GONE : View.VISIBLE);
         }
+    }
+
+    @Override
+    public void onBackPressed() {
+        if (fileItemExplorer.getContent() != null) {
+            Intent returnIntent = new Intent();
+            Bundle bundle = new Bundle();
+            bundle.putParcelable("fileItemExplorer", fileItemExplorer);
+            returnIntent.putExtras(bundle);
+            setResult(HomeActivity.PICK_FILE, returnIntent);
+            finish();
+        }
+        super.onBackPressed();
     }
 
     private class CustomAsyncTask extends AsyncTask<URL, Void, String> {
@@ -126,10 +166,11 @@ public class ModelActivity extends AppCompatActivity {
         @Override
         protected void onPostExecute(String s) {
             super.onPostExecute(s);
-            if(s==null) {
+            if (s == null) {
                 Snackbar.make(drawer, "Erreur de connexion", Snackbar.LENGTH_SHORT).show();
-            }else{
+            } else {
                 System.out.println(s);
+                fileItemExplorer.setContent(s);
             }
             displayProgressBar(false);
         }

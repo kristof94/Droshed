@@ -1,25 +1,19 @@
 package kristof.fr.droshed.activity.HomeActivity;
 
-import android.app.Activity;
+import android.app.Fragment;
+import android.content.ClipData;
 import android.content.Context;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
-import android.support.design.widget.Snackbar;
-import android.support.v4.app.Fragment;
-import android.support.v4.app.FragmentActivity;
-import android.support.v4.app.FragmentManager;
-import android.support.v4.app.FragmentTransaction;
 import android.view.LayoutInflater;
-import android.view.Menu;
-import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.GridView;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import kristof.fr.droshed.Explorer.FileItemExplorer;
 import kristof.fr.droshed.Explorer.FolderItemExplorer;
@@ -32,103 +26,114 @@ import kristof.fr.droshed.custom.CustomItemAdapter;
  * on 4/23/17.
  */
 
-public class CustomFragment extends  android.support.v4.app.Fragment {
+public class CustomFragment extends Fragment {
 
-    private List<ItemExplorer> itemExplorerList = new ArrayList<>();
-    private AtomicInteger idFragment = new AtomicInteger(0);
+    public ArrayList<ItemExplorer> getItemExplorerList() {
+        return itemExplorerList;
+    }
+
+    private ArrayList<ItemExplorer> itemExplorerList;
     private CustomItemAdapter customAdapter;
     private String path;
-    private boolean isLoaded;
-    private ManagerHashMap link;
+    private FolderManager link;
+    private ItemExplorer itemExplorer;
 
+    public interface FolderManager {
+        void refresh(CustomFragment customFragment);
 
-    public interface ManagerHashMap {
-        public void addToHashMap(CustomFragment customFragment);
-        public void manageItem(String path);
-    }
+        void manageItem(String path, FileItemExplorer fileItemExplorer);
 
-    public boolean isLoaded() {
-        return isLoaded;
-    }
-
-
-    @Override
-    public void onCreate(@Nullable Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setHasOptionsMenu(true);
+        void addFragmentToStack(Bundle args);
     }
 
     @Override
     public void onAttach(Context context) {
         super.onAttach(context);
-        link = (ManagerHashMap) getActivity();
+        link = (FolderManager) getActivity();
     }
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case R.id.refresh:
-                link.addToHashMap(this);
+                link.refresh(this);
                 return true;
             default:
                 return super.onOptionsItemSelected(item);
         }
-        //return super.onOptionsItemSelected(item);
+    }
+
+    @Override
+    public void onCreate(@Nullable Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        System.out.println("onCreateFuckingFragment");
+        setRetainInstance(true);
+        setHasOptionsMenu(true);
+        if (itemExplorerList == null) {
+            itemExplorerList = new ArrayList<>();
+        }
+        Bundle bundle = getArguments();
+        if (bundle != null) {
+            path = bundle.getString("path");
+            itemExplorer = bundle.getParcelable("itemExplorer");
+            if (bundle.containsKey("itemExplorerList")) {
+                itemExplorerList.addAll(bundle.getParcelableArrayList("itemExplorerList"));
+            }
+            return;
+        }
+        if (savedInstanceState != null) {
+            path = savedInstanceState.getString("path");
+            itemExplorer = savedInstanceState.getParcelable("itemExplorer");
+            itemExplorerList.addAll(savedInstanceState.getParcelableArrayList("itemExplorerList"));
+        }
+    }
+
+    @Override
+    public void onSaveInstanceState(Bundle outState) {
+        outState.putString("path", path);
+        outState.putParcelableArrayList("itemExplorerList", itemExplorerList);
+        outState.putParcelable("itemExplorer", itemExplorer);
+        super.onSaveInstanceState(outState);
+    }
+
+    static public CustomFragment createNewFragment(String root) {
+        CustomFragment firstFragment = new CustomFragment();
+        Bundle args = new Bundle();
+        args.putString("path", root);
+        firstFragment.setArguments(args);
+        return firstFragment;
     }
 
     @Nullable
     @Override
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, Bundle savedInstanceState) {
-        isLoaded = true;
         View view = inflater.inflate(R.layout.fragment_layout, container, false);
         GridView gridView = (GridView) view.findViewById(R.id.gridView);
-        gridView.setOnItemClickListener((parent, view1, position, id) -> {
-            ItemExplorer itemExplorer = (ItemExplorer) parent.getItemAtPosition(position);
-            if (itemExplorer instanceof FileItemExplorer) {
-                FileItemExplorer fileItemExplorer = (FileItemExplorer) itemExplorer;
-                link.manageItem(path+"/"+fileItemExplorer.getName());
+        gridView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                ItemExplorer itemExplorer = (ItemExplorer) parent.getItemAtPosition(position);
+                if (itemExplorer instanceof FileItemExplorer) {
+                    FileItemExplorer fileItemExplorer = (FileItemExplorer) itemExplorer;
+                    link.manageItem(path + "/" + fileItemExplorer.getName(), fileItemExplorer);
+                }
+                if (itemExplorer instanceof FolderItemExplorer) {
+                    FolderItemExplorer folderItemExplorer = (FolderItemExplorer) itemExplorer;
+                    CustomFragment firstFragment = new CustomFragment();
+                    Bundle args = new Bundle();
+                    StringBuilder sb = new StringBuilder(path);
+                    sb.append("/").append(folderItemExplorer.getName());
+                    args.putString("path", sb.toString());
+                    args.putParcelableArrayList("itemExplorerList", folderItemExplorer.getItemExplorerList());
+                    firstFragment.setArguments(args);
+                    link.addFragmentToStack(args);
+                    //updateGridViewList(folderItemExplorer.getItemExplorerList());
+                }
             }
-            if (itemExplorer instanceof FolderItemExplorer) {
-                FolderItemExplorer folderItemExplorer = (FolderItemExplorer) itemExplorer;
-                CustomFragment firstFragment = new CustomFragment();
-                Bundle args = new Bundle();
-                //args.putInt("id",idFragment);
-                StringBuilder sb = new StringBuilder(path);
-                sb.append("/").append(folderItemExplorer.getName());
-                args.putString("path",sb.toString());
-                args.putParcelableArrayList("list",folderItemExplorer.getItemExplorerList());
-                // In case this activity was started with special instructions from an
-                // Intent, pass the Intent's extras to the fragment as arguments
-                firstFragment.setArguments(args);
-                // Add the fragment to the 'fragment_container' FrameLayout
-                // support package FragmentManager (getSupportFragmentManager).
-                replaceFragment(firstFragment,getActivity());
-            }
-
         });
-        if (getArguments() != null && idFragment.getAndIncrement()==0) {
-            Bundle args = getArguments();
-            if (args.containsKey("list")) {
-                path = args.getString("path");
-                itemExplorerList.addAll(args.getParcelableArrayList("list"));
-            }
-        }
-        customAdapter = new CustomItemAdapter(getActivity(),itemExplorerList);
+        customAdapter = new CustomItemAdapter(getActivity(), itemExplorerList);
         gridView.setAdapter(customAdapter);
         return view;
-    }
-
-    public void replaceFragment (Fragment fragment, FragmentActivity activity){
-        String backStateName = fragment.getClass().getName();
-        FragmentManager manager = activity.getSupportFragmentManager();
-        boolean fragmentPopped = manager.popBackStackImmediate (backStateName, 0);
-
-        if (!fragmentPopped){ //fragment not in back stack, create it.
-            FragmentTransaction ft = manager.beginTransaction();
-            ft.replace(R.id.flContent, fragment,path);
-            ft.addToBackStack(backStateName);
-            ft.commit();
-        }
     }
 
     public void updateGridViewList(List<ItemExplorer> s) {
@@ -136,9 +141,4 @@ public class CustomFragment extends  android.support.v4.app.Fragment {
         itemExplorerList.addAll(s);
         customAdapter.notifyDataSetChanged();
     }
-
-    public String getPath() {
-        return path;
-    }
-
 }
