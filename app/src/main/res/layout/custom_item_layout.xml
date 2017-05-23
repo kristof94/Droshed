@@ -12,10 +12,11 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center"
-        app:srcCompat="@drawable/doc_icone" />
+        app:srcCompat="@drawable/doc_icon" />
 
     <TextView
         android:id="@+id/textView2"
+        android:text="HELLO WORLD"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:textSize="20dp"

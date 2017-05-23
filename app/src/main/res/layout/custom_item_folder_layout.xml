@@ -11,7 +11,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center"
-        app:srcCompat="@drawable/folder_icone" />
+        app:srcCompat="@drawable/folder_icon" />
 
     <TextView
         android:id="@+id/textView2"
