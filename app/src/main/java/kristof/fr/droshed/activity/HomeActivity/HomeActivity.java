@@ -291,7 +291,7 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
         Bundle bundle = new Bundle();
         bundle.putParcelable("serverInfo", serverInfo);
         bundle.putString("path", path);
-        bundle.putParcelable("fileItemExplorer",fileItemExplorer);
+        bundle.putString("fileItemExplorer",fileItemExplorer.getName());
         mainIntent.putExtras(bundle);
         startActivityForResult(mainIntent, PICK_FILE);
     }
@@ -299,7 +299,7 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         // Check which request we're responding to
-        if (requestCode == PICK_FILE) {
+        /*if (requestCode == PICK_FILE) {
             // Make sure the request was successful
             if (resultCode == HomeActivity.PICK_FILE) {
                 Bundle bundle = data.getExtras();
@@ -312,7 +312,7 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
                     }
                 }
             }
-        }
+        }*/
 
     }
 

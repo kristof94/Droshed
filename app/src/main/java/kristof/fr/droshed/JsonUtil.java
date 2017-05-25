@@ -38,7 +38,7 @@ public class JsonUtil {
         String type = json.getString("type");
         ItemExplorer itemExplorer = null;
         if(type.equals("file"))
-            itemExplorer = new FileItemExplorer(type,name,R.layout.custom_item_layout,null);
+            itemExplorer = new FileItemExplorer(type,name,R.layout.custom_item_layout);
         else if (type.equals("directory")){
             itemExplorer =  new FolderItemExplorer(type,name,R.layout.custom_item_folder_layout,toListofCustomItemfromJsonObject(json));
         }

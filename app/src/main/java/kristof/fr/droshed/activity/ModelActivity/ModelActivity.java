@@ -12,16 +12,21 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.GridView;
 import android.widget.ProgressBar;
+import android.widget.TextView;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.FileReader;
 import java.io.IOException;
+import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
 import java.net.URL;
 
-import kristof.fr.droshed.Explorer.FileItemExplorer;
 import kristof.fr.droshed.R;
 import kristof.fr.droshed.ServerInfo;
 import kristof.fr.droshed.Util;
-import kristof.fr.droshed.activity.HomeActivity.HomeActivity;
 
 public class ModelActivity extends AppCompatActivity {
 
@@ -31,35 +36,32 @@ public class ModelActivity extends AppCompatActivity {
     private String path;
     private View drawer;
     private android.support.v7.widget.Toolbar toolbar;
-    private FileItemExplorer fileItemExplorer;
+    private String fileItemExplorer;
+    private TextView textView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_model);
-        /*Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar3);
-        setSupportActionBar(toolbar);
-        if(getSupportActionBar()!=null){
-            getSupportActionBar().setDisplayShowTitleEnabled(false);
-            getSupportActionBar().setDisplayShowHomeEnabled(true);
-            getSupportActionBar().setDisplayHomeAsUpEnabled(true);
-            System.out.println(getSupportActionBar());
-
-        }else{
-            System.out.println(getSupportActionBar());
-        }*/
         gridView = (GridView) findViewById(R.id.gridViewModel);
         progressBar = (ProgressBar) findViewById(R.id.progressBar);
         drawer = findViewById(R.id.drawer);
+        textView = (TextView) findViewById(R.id.textView);
         Intent intent = getIntent();
+
         if (intent != null) {
             Bundle bundle = intent.getExtras();
             if (bundle != null) {
                 if (bundle.containsKey("serverInfo")) {
                     serverInfo = bundle.getParcelable("serverInfo");
                     path = bundle.getString("path");
-                    fileItemExplorer = bundle.getParcelable("fileItemExplorer");
-                    if (serverInfo != null && path != null && fileItemExplorer.getContent() == null) {
+                    fileItemExplorer = bundle.getString("fileItemExplorer");
+                    File cDir = getBaseContext().getCacheDir();
+                    File tempFile = new File(cDir.getPath() + "/" + fileItemExplorer);
+                    if(tempFile.exists()){
+                        new CustomReadFileAsyncTask().execute(tempFile);
+                    }
+                    else if (serverInfo != null && path != null) {
                         downloadXMLAndParseFile(serverInfo + path);
                     }
                 }
@@ -118,14 +120,7 @@ public class ModelActivity extends AppCompatActivity {
 
     @Override
     public void onBackPressed() {
-        if (fileItemExplorer.getContent() != null) {
-            Intent returnIntent = new Intent();
-            Bundle bundle = new Bundle();
-            bundle.putParcelable("fileItemExplorer", fileItemExplorer);
-            returnIntent.putExtras(bundle);
-            setResult(HomeActivity.PICK_FILE, returnIntent);
-            finish();
-        }
+
         super.onBackPressed();
     }
 
@@ -169,8 +164,12 @@ public class ModelActivity extends AppCompatActivity {
             if (s == null) {
                 Snackbar.make(drawer, "Erreur de connexion", Snackbar.LENGTH_SHORT).show();
             } else {
-                System.out.println(s);
-                fileItemExplorer.setContent(s);
+                textView.setText(s);
+                try {
+                    getTempFile(fileItemExplorer,s);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
             }
             displayProgressBar(false);
         }
@@ -180,6 +179,89 @@ public class ModelActivity extends AppCompatActivity {
             super.onCancelled();
             displayProgressBar(false);
         }
+    }
+
+    private class CustomReadFileAsyncTask extends AsyncTask<File, Void, String> {
+
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+            displayProgressBar(true);
+        }
+
+        @Override
+        protected String doInBackground(File... params) {
+            for(File file : params) {
+                try {
+                    return readFile(file);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+            return  null;
+        }
+
+        @Override
+        protected void onPostExecute(String s) {
+            super.onPostExecute(s);
+            if (s == null) {
+                Snackbar.make(drawer, "Erreur de connexion", Snackbar.LENGTH_SHORT).show();
+            } else {
+                textView.setText(s);
+                try {
+                    getTempFile(fileItemExplorer,s);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+            displayProgressBar(false);
+        }
+
+        @Override
+        protected void onCancelled() {
+            super.onCancelled();
+            displayProgressBar(false);
+        }
+    }
+
+
+    public void getTempFile(String fileItemExplorer,String content) throws IOException {
+        File cDir = getBaseContext().getCacheDir();
+        /** Getting a reference to temporary file, if created earlier */
+        File tempFile = new File(cDir.getPath() + "/" + fileItemExplorer);
+        tempFile.createNewFile();
+        FileOutputStream fOut = new FileOutputStream(tempFile);
+        OutputStreamWriter myOutWriter = new OutputStreamWriter(fOut);
+        myOutWriter.write(content);
+        myOutWriter.close();
+        fOut.flush();
+        fOut.close();
+    }
+
+    public String readFile(File tempFile) throws IOException {
+        /** Getting a reference to temporary file, if created earlier */
+        StringBuilder sb = new StringBuilder();
+        FileReader fReader = null;
+        BufferedReader bufferedReader = null;
+        try {
+            fReader = new FileReader(tempFile);
+            bufferedReader = new BufferedReader(fReader);
+            String strLine = null;
+            /** Reading the contents of the file , line by line */
+            while( (strLine=bufferedReader.readLine()) != null  ){
+                sb.append(strLine);
+            }
+        } catch(IOException e){
+            e.printStackTrace();
+        }finally {
+            if(bufferedReader!=null) {
+                bufferedReader.close();
+            }
+            if(fReader!=null){
+                fReader.close();
+            }
+        }
+        return sb.toString();
     }
 
 }

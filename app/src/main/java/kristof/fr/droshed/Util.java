@@ -11,13 +11,15 @@ import java.io.InputStreamReader;
  */
 
 public class Util {
+
     public static String getStringFromInputStream(InputStream inputStream) throws IOException {
         BufferedReader in = new BufferedReader(new InputStreamReader(
                 inputStream));
         StringBuilder sb = new StringBuilder();
         String inputLine;
-        while ((inputLine = in.readLine()) != null)
+        while ((inputLine = in.readLine()) != null) {
             sb.append(inputLine);
+        }
         in.close();
         return sb.toString();
     }
