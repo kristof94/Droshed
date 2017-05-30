@@ -75,27 +75,46 @@ def authenticated(f):
 def checkAuthentifation():
 	return Response('Authentication Ok', 200, {'WWW-Authenticate': 'Basic realm="Login Required accepted"'})
 
-@app.route('/', methods=['PUT'], defaults={'path': ''})
-@app.route('/<path:path>', methods=['PUT'])
-@authenticated
-def getListOfFolder(path):
-    return getResponseWithJson(path)
+#@app.route('/', methods=['PUT'], defaults={'path': ''})
+#@app.route('/<path:path>', methods=['PUT'])
+#@authenticated
+#def getListOfFolder(path):
+#    return getResponseWithJson(path)
 
 @app.route('/', methods=['GET'], defaults={'path': ''})
 @app.route('/<path:path>', methods=['GET'])
 @authenticated
 def getFileContent(path):
+	command = request.args.get('info')
+	if(command == 'version'):
+		with open(path) as json_data:
+    			d = json.load(json_data)
+			data = {}
+			data['version'] = d['version']
+			return app.response_class(
+	        	response=json.dumps(data),
+        		status=200,
+        		mimetype='application/json')
+
+
+
 	if(os.path.isfile(path)):
-		jsonData = {'name': os.path.basename(path)}
+		#jsonData = {'name': os.path.basename(path)}
 		with open(path, "r") as file:
-    			lines = file.read().split("\n")		
-        	jsonData['content'] = ''.join(lines)
+    			lines = file.read().split("\n")	
+        	#jsonData['content'] = ''.join(lines)
+		#print(jsonData['content'])
 		return app.response_class(
-        	response=json.dumps(jsonData, indent=2),
+        	response=lines,
         	status=200,
         	mimetype='application/json')
 	else:
 		return Response('Not found', 404, {'WWW-Authenticate': 'Bad Path."'})
+
+def getVersionFile(path):
+	json_data=open(path).read()
+	data = json.loads(json_data)
+	
 
 @app.route("/model",methods=['GET'])
 @authenticated
@@ -105,7 +124,7 @@ def getlistmodel():
 @app.route("/data",methods=['GET'])
 @authenticated
 def getlistdata():
-	return getResponseWithJson("data")
+	return getResponseWithJson("datasheet")
 
 def getResponseWithJson(nameFolder):
 	return app.response_class(
@@ -115,6 +134,7 @@ def getResponseWithJson(nameFolder):
 
 def path_to_dict(path):
     d = {'name': os.path.basename(path)}
+    d['path'] = path
     if os.path.isdir(path):
         d['type'] = "directory"
         d['children'] = [path_to_dict(os.path.join(path,x)) for x in os.listdir(path)]
@@ -171,6 +191,28 @@ def putversion(sheetname, version):
 		with open(filepath, "wb") as f:
 			f.write(request.data)
 		return "registered", 200
+
+@app.route('/', methods=['PUT'], defaults={'path': ''})
+@app.route('/<path:path>', methods=['PUT'])
+@authenticated
+def getUploadFile(path):
+	j = json.loads(request.data)
+	fileName = j['path']
+	if fileName.startswith('data') or fileName.startswith('model'):
+		writeJsonStringToFile(fileName,j)
+		return "upload OK", 200
+	else:
+		return "upload problem", 403
+
+def writeStringToFile(fileName,content):
+	file = open(fileName,"w")	 
+	file.write(content)
+	file.close()
+
+def writeJsonStringToFile(fileName,jj):
+	file = open(fileName,"w")	 
+	file.write(json.dumps(jj, indent=4, sort_keys=True))
+	file.close()
 
 if __name__ == "__main__":
 	loginDir = "login"

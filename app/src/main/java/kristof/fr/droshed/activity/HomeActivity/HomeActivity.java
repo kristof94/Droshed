@@ -23,39 +23,40 @@ import android.view.View;
 import android.widget.FrameLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import org.json.JSONException;
+import org.json.JSONObject;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 
 import kristof.fr.droshed.Explorer.FileItemExplorer;
+import kristof.fr.droshed.Explorer.FolderItemExplorer;
 import kristof.fr.droshed.Explorer.ItemExplorer;
 import kristof.fr.droshed.JsonUtil;
 import kristof.fr.droshed.R;
 import kristof.fr.droshed.ServerInfo;
 import kristof.fr.droshed.Util;
+import kristof.fr.droshed.activity.CreateModelActivity.ListModelActivity;
 import kristof.fr.droshed.activity.ModelActivity.ModelActivity;
 import kristof.fr.droshed.custom.FontCache;
 
 public class HomeActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener, CustomFragment.FolderManager {
 
-    public static final int PICK_FILE = 1;
+    public static final int PICK_FILE = 100;
     private DrawerLayout drawer;
     private Toolbar toolbar;
     private ActionBarDrawerToggle toggle;
     private ServerInfo serverInfo;
     private ProgressBar progressBar;
     private FrameLayout frameLayout;
-    private HashMap<String,CustomFragment> hashMap;
-    private  CustomFragment currenFragment;
-    private String dataTag = "/data";
-    private String modelTag = "/model";
+    private HashMap<FolderItemExplorer, CustomFragment> hashMap;
+    private FolderItemExplorer currentFolderItemExplorer;
+    private File contextFile;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -64,7 +65,7 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
         setToolbar();
         initUiElements();
         hashMap = new HashMap<>();
-
+        contextFile = new File(getFilesDir().getPath() + "/datasheet");
         //manage rotation
         if (savedInstanceState != null) {
             manageRotation(savedInstanceState);
@@ -73,13 +74,7 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
             if (intent != null && serverInfo == null) {
                 Bundle bundle = intent.getExtras();
                 serverInfo = bundle.containsKey("serverInfo") ? bundle.getParcelable("serverInfo") : null;
-                CustomFragment customFragmentData = CustomFragment.createNewFragment(dataTag);
-                CustomFragment customFragmentModel = CustomFragment.createNewFragment(modelTag);
-                hashMap.put(dataTag,customFragmentData);
-                hashMap.put(modelTag,customFragmentModel);
-                getFragmentManager().beginTransaction().add(R.id.flContent,customFragmentData,dataTag).commit();
-                refreshListFolder("/data",customFragmentData);
-                currenFragment = customFragmentData;
+                refreshListFolder();
             }
         }
     }
@@ -87,22 +82,6 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
     private void manageRotation(Bundle savedInstanceState) {
         serverInfo = savedInstanceState.containsKey("serverInfo") ? savedInstanceState.getParcelable("serverInfo") : null;
 
-    }
-
-    @Override
-    protected void onSaveInstanceState(Bundle outState) {
-        /*outState.putParcelable("serverInfo", serverInfo);
-        hashMap.values().forEach(customFragment -> {
-            getFragmentManager().putFragment(outState,customFragment.getTag(),customFragment);
-        });
-        outState.putString("tagFragment", getFragmentManager().findFragmentById(0).getTag());
-
-        //getFragmentManager().putFragment(outState, fragmentTag, currentFragment);
-        /*CustomFragment currentFragment = (CustomFragment)  getFragmentManager().findFragmentByTag(TAG_MY_FRAGMENT);
-        if(getFragmentManager().findFragmentByTag(TAG_MY_FRAGMENT)!=null) {
-            getFragmentManager().putFragment(outState, TAG_MY_FRAGMENT, currentFragment);
-        }*/
-        super.onSaveInstanceState(outState);
     }
 
     private void initUiElements() {
@@ -113,49 +92,16 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
         toggle.syncState();
         drawer.addDrawerListener(toggle);
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
-        fab.setOnClickListener(view ->
-                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-                        .setAction("Action", null).show()
-        );
+        fab.setOnClickListener(__ -> launchCreateSpreadSheetActivity());
         NavigationView navigationView = (NavigationView) findViewById(R.id.nvView);
         navigationView.setNavigationItemSelectedListener(this);
     }
 
-    private void displayProgressBar(boolean show) {
-        int shortAnimTime = getResources().getInteger(android.R.integer.config_shortAnimTime);
-        frameLayout.setVisibility(show ? View.GONE : View.VISIBLE);
-        frameLayout.animate().setDuration(shortAnimTime).alpha(
-                show ? 0 : 1).setListener(new AnimatorListenerAdapter() {
-            @Override
-            public void onAnimationEnd(Animator animation) {
-                frameLayout.setVisibility(show ? View.GONE : View.VISIBLE);
-            }
-        });
-
-        progressBar.setVisibility(show ? View.VISIBLE : View.GONE);
-        progressBar.animate().setDuration(shortAnimTime).alpha(
-                show ? 1 : 0).setListener(new AnimatorListenerAdapter() {
-            @Override
-            public void onAnimationEnd(Animator animation) {
-                progressBar.setVisibility(show ? View.VISIBLE : View.GONE);
-            }
-        });
-    }
-
-    /*private void refreshListData() {
-        refreshListFolder("/data");
-    }
-
-    private void refreshListModel() {
-        refreshListFolder("/model");
-    }*/
-
-    private void refreshListFolder(String folderPath,CustomFragment customFragment) {
-        System.out.println("refreshListFolder");
+    private void refreshListFolder() {
         URL url;
         try {
-            url = new URL(serverInfo + folderPath);
-            new CustomAsyncTask("GET",customFragment).execute(url);
+            url = new URL(serverInfo + "/data");
+            new CustomAsyncTask("GET").execute(url);
         } catch (Exception e) {
             e.printStackTrace();
             Snackbar.make(drawer, "Erreur de connexion", Snackbar.LENGTH_SHORT).show();
@@ -213,35 +159,20 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
         android.app.FragmentTransaction fragmentTransaction = getFragmentManager().beginTransaction();
 
         getFragmentManager().popBackStackImmediate(null, FragmentManager.POP_BACK_STACK_INCLUSIVE);
-        if (id == R.id.nav_data) {
-            CustomFragment customFragmentData = hashMap.get(dataTag);
-            currenFragment = customFragmentData;
+        /*if (id == R.id.nav_data) {
+            currenFragment = hashMap.get(dataTag);
             fragmentTransaction.replace(R.id.flContent,currenFragment,dataTag).commit();
         } else if (id == R.id.nav_model) {
             CustomFragment customFragmentModel = hashMap.get(modelTag);
             currenFragment = customFragmentModel;
             fragmentTransaction.replace(R.id.flContent,currenFragment,modelTag).commit();
             if(customFragmentModel.getItemExplorerList()==null || customFragmentModel.getItemExplorerList().isEmpty()){
-                refreshListFolder("/model",customFragmentModel);
+                refreshListFolder(modelTag,customFragmentModel);
             }
-        }
+        }*/
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.homeDrawerLayout);
         drawer.closeDrawer(GravityCompat.START);
         return true;
-    }
-
-    @Override
-    public void onBackPressed() {
-        if (drawer.isDrawerOpen(GravityCompat.START)) {
-            drawer.closeDrawer(GravityCompat.START);
-        } else {
-            if (getSupportFragmentManager().getBackStackEntryCount() > 0) {
-                //currentFragment = (CustomFragment) getFragmentManager().findFragmentByTag(fragmentTag);
-                getSupportFragmentManager().popBackStack();
-            } else {
-                super.onBackPressed();
-            }
-        }
     }
 
     @Override
@@ -262,36 +193,34 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
             e.printStackTrace();
             Snackbar.make(drawer, "Erreur de connexion", Snackbar.LENGTH_SHORT).show();
         }*/
-        Toast.makeText(this,"Not implemented",Toast.LENGTH_SHORT);
+        //Toast.makeText(this,"Not implemented",Toast.LENGTH_SHORT);
     }
 
     @Override
-    public void manageItem(String path,FileItemExplorer fileItemExplorer) {
-        startModelActivity(serverInfo, path,fileItemExplorer);
+    public CustomFragment getFragment(FolderItemExplorer fileItemExplorer) {
+        return hashMap.get(fileItemExplorer);
     }
 
     @Override
-    public void addFragmentToStack(Bundle args) {
-        CustomFragment firstFragment = new CustomFragment();
-        firstFragment.setArguments(args);
-        String tag = args.getString("path");
-        currenFragment = firstFragment;
-
-        if(tag.contains("data")) {
-            tag = dataTag;
-        }
-        if(tag.contains("model")){
-            tag = modelTag;
-        }
-        getFragmentManager().beginTransaction().replace(R.id.flContent, currenFragment, tag).addToBackStack(null).commit();
+    public void manageItem(FileItemExplorer fileItemExplorer) {
+        startModelActivity(serverInfo, fileItemExplorer);
     }
 
-    private void startModelActivity(ServerInfo serverInfo, String path,FileItemExplorer fileItemExplorer) {
+    private void launchCreateSpreadSheetActivity() {
+        Intent mainIntent = new Intent(HomeActivity.this, ListModelActivity.class);
+        Bundle bundle = new Bundle();
+        bundle.putParcelable("serverInfo", serverInfo);
+        bundle.putParcelable("currentFolderItemExplorer", currentFolderItemExplorer);
+        mainIntent.putExtras(bundle);
+        startActivityForResult(mainIntent, PICK_FILE);
+    }
+
+    private void startModelActivity(ServerInfo serverInfo, FileItemExplorer fileItemExplorer) {
         Intent mainIntent = new Intent(HomeActivity.this, ModelActivity.class);
         Bundle bundle = new Bundle();
         bundle.putParcelable("serverInfo", serverInfo);
-        bundle.putString("path", path);
-        bundle.putString("fileItemExplorer",fileItemExplorer.getName());
+        bundle.putBoolean("isNewFile", false);
+        bundle.putParcelable("fileItemExplorer", fileItemExplorer);
         mainIntent.putExtras(bundle);
         startActivityForResult(mainIntent, PICK_FILE);
     }
@@ -299,31 +228,66 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         // Check which request we're responding to
-        /*if (requestCode == PICK_FILE) {
+
+        if (requestCode == PICK_FILE) {
             // Make sure the request was successful
-            if (resultCode == HomeActivity.PICK_FILE) {
+            if (resultCode == RESULT_OK) {
                 Bundle bundle = data.getExtras();
                 FileItemExplorer fileItemExplorer = bundle.getParcelable("fileItemExplorer");
-                List<ItemExplorer> list = currenFragment.getItemExplorerList();
-                for(int i = 0; i< list.size();i++){
-                    if(list.get(i).equals(fileItemExplorer)){
-                        currenFragment.getItemExplorerList().add(i,fileItemExplorer);
-                        break;
+                CustomFragment customFragment = hashMap.get(currentFolderItemExplorer);
+                if (customFragment != null) {
+                    ArrayList<ItemExplorer> itemExplorers = customFragment.getItemExplorerList();
+                    if (!itemExplorers.contains(fileItemExplorer)) {
+                        itemExplorers.add(fileItemExplorer);
+                        customFragment.updateGridViewList(itemExplorers);
                     }
                 }
             }
-        }*/
 
+            if (resultCode == RESULT_CANCELED) {
+                //Snackbar.make(drawer, "Erreur lors du téléchargement.", Snackbar.LENGTH_LONG).show();
+            }
+        }
+    }
+
+    private ItemExplorer listFile(File root) throws IOException {
+        System.out.println(root.getPath());
+        FolderItemExplorer itemExplorer = null;
+        //File contextFile = new File(getFilesDir().getPath() + "/data");
+        ArrayList<ItemExplorer> itemExplorers = new ArrayList<>();
+        File[] listFiles = root.listFiles();
+        if (listFiles != null) {
+            for (File f : listFiles) {
+                if (f.isFile()) {
+                    //String type, String name,int id,String path,int version
+                    String content = ModelActivity.readFile(f);
+                    int version = 0;
+                    try {
+                        JSONObject jsonObject = new JSONObject(content);
+                        version = jsonObject.getInt("version");
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    }
+                    ItemExplorer itemExplorerFile = new FileItemExplorer("file", f.getName(), R.layout.custom_item_layout, f.getPath(), version);
+                    itemExplorers.add(itemExplorerFile);
+                }
+                if (f.isDirectory()) {
+                    ItemExplorer folder = listFile(f);
+                    itemExplorers.add(folder);
+                }
+            }
+        }
+        System.out.println(root.getName());
+        itemExplorer = new FolderItemExplorer("directory", root.getName(), R.layout.custom_item_folder_layout, root.getPath(), itemExplorers);
+        return itemExplorer;
     }
 
 
-    private class CustomAsyncTask extends AsyncTask<URL, Void, ArrayList<ItemExplorer>> {
+    private class CustomAsyncTask extends AsyncTask<URL, Void, ItemExplorer> {
         private String method;
-        private CustomFragment customFragment;
 
-        CustomAsyncTask(String method, CustomFragment customFragment) {
+        CustomAsyncTask(String method) {
             this.method = method;
-            this.customFragment = customFragment;
         }
 
         @Override
@@ -333,8 +297,15 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
         }
 
         @Override
-        protected ArrayList<ItemExplorer> doInBackground(URL... params) {
+        protected ItemExplorer doInBackground(URL... params) {
             for (URL url : params) {
+                ItemExplorer itemExplorer = null;
+                try {
+                    itemExplorer = listFile(contextFile);
+
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
                 HttpURLConnection urlConnection = null;
                 try {
                     urlConnection = (HttpURLConnection) url.openConnection();
@@ -346,10 +317,12 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
                     // Starts the query
                     urlConnection.connect();
                     if (urlConnection.getResponseCode() == 200) {
-                        return JsonUtil.toListofCustomItem(
+                        ItemExplorer itemFromServer = JsonUtil.toCustomItem(
                                 Util.getStringFromInputStream(urlConnection.getInputStream())
                         );
+                        //itemExplorer = itemFromServer;
                     }
+                    return itemExplorer;
                 } catch (IOException | JSONException e) {
                     e.printStackTrace();
                 } finally {
@@ -361,24 +334,15 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
         }
 
         @Override
-        protected void onPostExecute(ArrayList<ItemExplorer> s) {
+        protected void onPostExecute(ItemExplorer s) {
             super.onPostExecute(s);
             if (s == null) {
                 Snackbar.make(drawer, "Erreur de connexion", Snackbar.LENGTH_SHORT).show();
             } else {
-                if (customFragment != null) {
-                    customFragment.updateGridViewList(s);
-
-                    if(customFragment.getTag().contains("data")){
-                        hashMap.put(dataTag,customFragment);
-                        hashMap.put(dataTag,customFragment);
-                    }
-
-                    if(customFragment.getTag().contains("model")){
-                        hashMap.put(modelTag,customFragment);
-                        hashMap.put(modelTag,customFragment);
-                    }
-
+                if (s instanceof FolderItemExplorer) {
+                    FolderItemExplorer folderItemExplorer = (FolderItemExplorer) s;
+                    CustomFragment customFragment = CustomFragment.createNewFragment(folderItemExplorer);
+                    addFragmentToStack(folderItemExplorer, customFragment);
                 }
             }
             displayProgressBar(false);
@@ -388,6 +352,60 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
         protected void onCancelled() {
             super.onCancelled();
             displayProgressBar(false);
+        }
+    }
+
+    private void displayProgressBar(boolean show) {
+        int shortAnimTime = getResources().getInteger(android.R.integer.config_shortAnimTime);
+        frameLayout.setVisibility(show ? View.GONE : View.VISIBLE);
+        frameLayout.animate().setDuration(shortAnimTime).alpha(
+                show ? 0 : 1).setListener(new AnimatorListenerAdapter() {
+            @Override
+            public void onAnimationEnd(Animator animation) {
+                frameLayout.setVisibility(show ? View.GONE : View.VISIBLE);
+            }
+        });
+
+        progressBar.setVisibility(show ? View.VISIBLE : View.GONE);
+        progressBar.animate().setDuration(shortAnimTime).alpha(
+                show ? 1 : 0).setListener(new AnimatorListenerAdapter() {
+            @Override
+            public void onAnimationEnd(Animator animation) {
+                progressBar.setVisibility(show ? View.VISIBLE : View.GONE);
+            }
+        });
+    }
+
+    @Override
+    public void addFragmentToHashMap(FolderItemExplorer folderItemExplorer, CustomFragment customFragment) {
+        hashMap.put(folderItemExplorer, customFragment);
+        currentFolderItemExplorer = folderItemExplorer;
+        addFragmentToBackStack(folderItemExplorer, customFragment);
+    }
+
+    private void addFragmentToStack(FolderItemExplorer folderItemExplorer, CustomFragment customFragment) {
+        hashMap.put(folderItemExplorer, customFragment);
+        currentFolderItemExplorer = folderItemExplorer;
+        getFragmentManager().beginTransaction().add(R.id.flContent, customFragment, folderItemExplorer.getPath())
+                .commit();
+    }
+
+    private void addFragmentToBackStack(FolderItemExplorer folderItemExplorer, CustomFragment customFragment) {
+        getFragmentManager().beginTransaction().add(R.id.flContent, customFragment, folderItemExplorer.getPath())
+                .addToBackStack(folderItemExplorer.getPath())
+                .commit();
+    }
+
+    @Override
+    public void onBackPressed() {
+        if (drawer.isDrawerOpen(GravityCompat.START)) {
+            drawer.closeDrawer(GravityCompat.START);
+        } else {
+            if (getSupportFragmentManager().getBackStackEntryCount() > 0) {
+                getSupportFragmentManager().popBackStack();
+            } else {
+                super.onBackPressed();
+            }
         }
     }
 }

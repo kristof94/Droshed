@@ -9,9 +9,19 @@ import android.os.Parcel;
 
 public class FileItemExplorer extends ItemExplorer{
 
+    public int getVersion() {
+        return version;
+    }
 
-    public FileItemExplorer(String type, String name,int id) {
-        super(type, name,id);
+    public void setVersion(int version) {
+        this.version = version;
+    }
+
+    private int version;
+
+    public FileItemExplorer(String type, String name,int id,String path,int version) {
+        super(type, name,id,path);
+        this.version = version;
     }
 
     @Override
@@ -26,6 +36,7 @@ public class FileItemExplorer extends ItemExplorer{
 
     protected FileItemExplorer(Parcel in) {
         super(in);
+        version = in.readInt();
     }
 
     public static final Creator<FileItemExplorer> CREATOR = new Creator<FileItemExplorer>() {
@@ -43,13 +54,6 @@ public class FileItemExplorer extends ItemExplorer{
     @Override
     public void writeToParcel(Parcel dest, int flags) {
         super.writeToParcel(dest, flags);
+        dest.writeInt(version);
     }
-
-
-
-
-
-
-
-
 }

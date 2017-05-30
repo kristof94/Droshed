@@ -14,6 +14,12 @@ public abstract class ItemExplorer implements Parcelable{
 
     protected String type;
 
+    public String getPath() {
+        return path;
+    }
+
+    protected String path;
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -38,10 +44,11 @@ public abstract class ItemExplorer implements Parcelable{
     protected String name;
     protected int layoutID;
 
-    public ItemExplorer(String type, String name, int layoutID) {
+    public ItemExplorer(String type, String name, int layoutID,String path) {
         this.type = type;
         this.name = name;
         this.layoutID = layoutID;
+        this.path = path;
     }
 
     public String getType() {
@@ -63,6 +70,7 @@ public abstract class ItemExplorer implements Parcelable{
         this.type = in.readString();
         this.name = in.readString();
         this.layoutID = in.readInt();
+        this.path = in.readString();
     }
 
     @Override
@@ -70,6 +78,7 @@ public abstract class ItemExplorer implements Parcelable{
         dest.writeString(type);
         dest.writeString(name);
         dest.writeInt(layoutID);
+        dest.writeString(path);
     }
 
 

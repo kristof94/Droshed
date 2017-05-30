@@ -1,7 +1,6 @@
 package kristof.fr.droshed.activity.HomeActivity;
 
 import android.app.Fragment;
-import android.content.ClipData;
 import android.content.Context;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
@@ -34,16 +33,17 @@ public class CustomFragment extends Fragment {
 
     private ArrayList<ItemExplorer> itemExplorerList;
     private CustomItemAdapter customAdapter;
-    private String path;
     private FolderManager link;
-    private ItemExplorer itemExplorer;
+    private FolderItemExplorer folderItemExplorer;
 
     public interface FolderManager {
         void refresh(CustomFragment customFragment);
 
-        void manageItem(String path, FileItemExplorer fileItemExplorer);
+        CustomFragment getFragment(FolderItemExplorer fileItemExplorer);
 
-        void addFragmentToStack(Bundle args);
+        void manageItem(FileItemExplorer fileItemExplorer);
+
+        void addFragmentToHashMap(FolderItemExplorer folderItemExplorer, CustomFragment customFragment);
     }
 
     @Override
@@ -74,32 +74,22 @@ public class CustomFragment extends Fragment {
         }
         Bundle bundle = getArguments();
         if (bundle != null) {
-            path = bundle.getString("path");
-            itemExplorer = bundle.getParcelable("itemExplorer");
-            if (bundle.containsKey("itemExplorerList")) {
-                itemExplorerList.addAll(bundle.getParcelableArrayList("itemExplorerList"));
-            }
-            return;
-        }
-        if (savedInstanceState != null) {
-            path = savedInstanceState.getString("path");
-            itemExplorer = savedInstanceState.getParcelable("itemExplorer");
-            itemExplorerList.addAll(savedInstanceState.getParcelableArrayList("itemExplorerList"));
+            folderItemExplorer = bundle.getParcelable("folderItemExplorer");
+            itemExplorerList.addAll(folderItemExplorer.getItemExplorerList());
         }
     }
 
     @Override
     public void onSaveInstanceState(Bundle outState) {
-        outState.putString("path", path);
         outState.putParcelableArrayList("itemExplorerList", itemExplorerList);
-        outState.putParcelable("itemExplorer", itemExplorer);
+        outState.putParcelable("itemExplorer", folderItemExplorer);
         super.onSaveInstanceState(outState);
     }
 
-    static public CustomFragment createNewFragment(String root) {
+    static public CustomFragment createNewFragment(FolderItemExplorer folderItemExplorer) {
         CustomFragment firstFragment = new CustomFragment();
         Bundle args = new Bundle();
-        args.putString("path", root);
+        args.putParcelable("folderItemExplorer", folderItemExplorer);
         firstFragment.setArguments(args);
         return firstFragment;
     }
@@ -107,6 +97,7 @@ public class CustomFragment extends Fragment {
     @Nullable
     @Override
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, Bundle savedInstanceState) {
+
         View view = inflater.inflate(R.layout.fragment_layout, container, false);
         GridView gridView = (GridView) view.findViewById(R.id.gridView);
         gridView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
@@ -115,19 +106,15 @@ public class CustomFragment extends Fragment {
                 ItemExplorer itemExplorer = (ItemExplorer) parent.getItemAtPosition(position);
                 if (itemExplorer instanceof FileItemExplorer) {
                     FileItemExplorer fileItemExplorer = (FileItemExplorer) itemExplorer;
-                    link.manageItem(path + "/" + fileItemExplorer.getName(), fileItemExplorer);
+                    link.manageItem(fileItemExplorer);
                 }
                 if (itemExplorer instanceof FolderItemExplorer) {
                     FolderItemExplorer folderItemExplorer = (FolderItemExplorer) itemExplorer;
-                    CustomFragment firstFragment = new CustomFragment();
-                    Bundle args = new Bundle();
-                    StringBuilder sb = new StringBuilder(path);
-                    sb.append("/").append(folderItemExplorer.getName());
-                    args.putString("path", sb.toString());
-                    args.putParcelableArrayList("itemExplorerList", folderItemExplorer.getItemExplorerList());
-                    firstFragment.setArguments(args);
-                    link.addFragmentToStack(args);
-                    //updateGridViewList(folderItemExplorer.getItemExplorerList());
+                    CustomFragment customFragment = link.getFragment(folderItemExplorer);
+                    if (customFragment == null) {
+                        customFragment = createNewFragment(folderItemExplorer);
+                    }
+                    link.addFragmentToHashMap(folderItemExplorer, customFragment);
                 }
             }
         });
@@ -136,9 +123,8 @@ public class CustomFragment extends Fragment {
         return view;
     }
 
-    public void updateGridViewList(List<ItemExplorer> s) {
-        itemExplorerList.clear();
-        itemExplorerList.addAll(s);
+    public void updateGridViewList(ArrayList<ItemExplorer> s) {
+        itemExplorerList = s;
         customAdapter.notifyDataSetChanged();
     }
 }

@@ -26,7 +26,6 @@
     <string name="loginPath">/login</string>
 
 
-
     <string name="navigation_drawer_open">Open navigation drawer</string>
     <string name="navigation_drawer_close">Close navigation drawer</string>
 
@@ -37,5 +36,7 @@
 
     <string name="dataFolder">/data</string>
     <string name="modelFolder">/model</string>
+    <string name="title_activity_create_spread_sheet">CreateSpreadSheetActivity</string>
+    <string name="section_format">Hello World from section: %1$d</string>
 
 </resources>

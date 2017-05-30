@@ -202,6 +202,8 @@ public class LoginActivity extends AppCompatActivity {
         private final String authBase64;
         private final String password;
 
+        private String error;
+
         UserLoginTask(String url, String user, String password) {
             this.url = url;
             this.user = user;
@@ -232,6 +234,7 @@ public class LoginActivity extends AppCompatActivity {
                     return (response == 200);
                 } catch (IOException e) {
                     e.printStackTrace();
+                    error = e.getMessage();
                 } finally {
                     if (urlConnection != null)
                         urlConnection.disconnect();
@@ -250,7 +253,7 @@ public class LoginActivity extends AppCompatActivity {
                 ServerInfo serverInfo = new ServerInfo(url, authBase64);
                 startMainActivityAndExitLoginActivity(serverInfo);
             } else {
-                Snackbar.make(parentView, getString(R.string.alertConnexionProblem), Snackbar.LENGTH_SHORT).show();
+                Snackbar.make(parentView, error, Snackbar.LENGTH_SHORT).show();
             }
             showProgress(false);
         }
