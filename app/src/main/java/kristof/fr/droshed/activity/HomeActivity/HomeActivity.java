@@ -2,7 +2,6 @@ package kristof.fr.droshed.activity.HomeActivity;
 
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
-import android.app.FragmentManager;
 import android.content.Intent;
 import android.content.res.Configuration;
 import android.graphics.Typeface;
@@ -12,6 +11,7 @@ import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.NavigationView;
 import android.support.design.widget.Snackbar;
+import android.support.v4.app.FragmentManager;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
@@ -34,6 +34,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+import kristof.fr.droshed.CollectionUtils;
 import kristof.fr.droshed.Explorer.FileItemExplorer;
 import kristof.fr.droshed.Explorer.FolderItemExplorer;
 import kristof.fr.droshed.Explorer.ItemExplorer;
@@ -79,9 +80,42 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
         }
     }
 
+    class GenericCls<T> {
+        private Class<T> type;
+
+        public GenericCls(Class<T> cls) {
+            type = cls;
+        }
+
+        Class<T> getType() {
+            return type;
+        }
+    }
+
     private void manageRotation(Bundle savedInstanceState) {
         serverInfo = savedInstanceState.containsKey("serverInfo") ? savedInstanceState.getParcelable("serverInfo") : null;
+        currentFolderItemExplorer = savedInstanceState.containsKey("currentFolderItemExplorer") ? savedInstanceState.getParcelable("currentFolderItemExplorer") : null;
+        HashMap<String, FolderItemExplorer> hashMapBundle;
+        GenericCls<FolderItemExplorer> clas = new GenericCls<>(FolderItemExplorer.class);
+        hashMapBundle = new HashMap<>(CollectionUtils.fromBundle(savedInstanceState.getBundle("hashMap"), clas.getType()));
+        for (String key : hashMapBundle.keySet()) {
+            FolderItemExplorer folderItemExplorer = hashMapBundle.get(key);
+            CustomFragment customFragment = CustomFragment.createNewFragment(folderItemExplorer);
+            hashMap.put(folderItemExplorer, customFragment);
+        }
+    }
 
+
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        outState.putParcelable("serverInfo", serverInfo);
+        outState.putParcelable("currentFolderItemExplorer", currentFolderItemExplorer);
+        HashMap<String, FolderItemExplorer> hashMapBundle = new HashMap<>();
+        for (FolderItemExplorer folderItemExplorer : hashMap.keySet()) {
+            hashMapBundle.put(folderItemExplorer.getName(), folderItemExplorer);
+        }
+        outState.putBundle("hashMap", CollectionUtils.toBundle(hashMapBundle));
+        super.onSaveInstanceState(outState);
     }
 
     private void initUiElements() {
@@ -155,7 +189,7 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
     public boolean onNavigationItemSelected(@NonNull MenuItem item) {
         int id = item.getItemId();
         //CLEAR FRAGMENT STACK
-        getFragmentManager().popBackStackImmediate(null, FragmentManager.POP_BACK_STACK_INCLUSIVE);
+        /*getFragmentManager().popBackStackImmediate(null, FragmentManager.POP_BACK_STACK_INCLUSIVE);
         android.app.FragmentTransaction fragmentTransaction = getFragmentManager().beginTransaction();
 
         getFragmentManager().popBackStackImmediate(null, FragmentManager.POP_BACK_STACK_INCLUSIVE);
@@ -250,7 +284,7 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
         }
     }
 
-    private ItemExplorer listFile(File root) throws IOException {
+    private FolderItemExplorer listFile(File root) throws IOException {
         System.out.println(root.getPath());
         FolderItemExplorer itemExplorer = null;
         //File contextFile = new File(getFilesDir().getPath() + "/data");
@@ -299,10 +333,9 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
         @Override
         protected ItemExplorer doInBackground(URL... params) {
             for (URL url : params) {
-                ItemExplorer itemExplorer = null;
+                FolderItemExplorer itemExplorer = null;
                 try {
                     itemExplorer = listFile(contextFile);
-
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
@@ -317,10 +350,32 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
                     // Starts the query
                     urlConnection.connect();
                     if (urlConnection.getResponseCode() == 200) {
-                        ItemExplorer itemFromServer = JsonUtil.toCustomItem(
+                        FolderItemExplorer itemFromServer = (FolderItemExplorer) JsonUtil.toCustomItem(
                                 Util.getStringFromInputStream(urlConnection.getInputStream())
                         );
-                        //itemExplorer = itemFromServer;
+                        for (ItemExplorer itemExplorer1 : itemFromServer.getItemExplorerList()) {
+                            if (!itemExplorer.getItemExplorerList().contains(itemExplorer1)) {
+
+                                if (itemExplorer1 instanceof FolderItemExplorer) {
+
+                                    //String type, String name,int id,String path,ArrayList<ItemExplorer> list
+                                    FolderItemExplorer folderItemExplorer = new FolderItemExplorer(
+                                            itemExplorer1.getType(),
+                                            itemExplorer1.getName(),
+                                            itemExplorer1.getLayoutID(),
+                                            itemExplorer1.getPath().replace("datasheet", contextFile.getPath()),
+                                            ((FolderItemExplorer) itemExplorer1).getItemExplorerList()
+                                    );
+                                    itemExplorer.getItemExplorerList().add(folderItemExplorer);
+                                    File directory = new File(folderItemExplorer.getPath());
+                                    if(!directory.exists()){
+                                        directory.mkdirs();
+                                    }
+                                }
+
+
+                            }
+                        }
                     }
                     return itemExplorer;
                 } catch (IOException | JSONException e) {
@@ -386,14 +441,20 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
     private void addFragmentToStack(FolderItemExplorer folderItemExplorer, CustomFragment customFragment) {
         hashMap.put(folderItemExplorer, customFragment);
         currentFolderItemExplorer = folderItemExplorer;
-        getFragmentManager().beginTransaction().add(R.id.flContent, customFragment, folderItemExplorer.getPath())
+        getFragmentManager().beginTransaction().replace(R.id.flContent, customFragment, folderItemExplorer.getPath())
                 .commit();
     }
 
     private void addFragmentToBackStack(FolderItemExplorer folderItemExplorer, CustomFragment customFragment) {
-        getFragmentManager().beginTransaction().add(R.id.flContent, customFragment, folderItemExplorer.getPath())
-                .addToBackStack(folderItemExplorer.getPath())
-                .commit();
+        if (hashMap.containsKey(folderItemExplorer)) {
+            getFragmentManager().beginTransaction().replace(R.id.flContent, customFragment, folderItemExplorer.getPath())
+                    .addToBackStack(folderItemExplorer.getPath())
+                    .commit();
+        } else {
+            getFragmentManager().beginTransaction().add(R.id.flContent, customFragment, folderItemExplorer.getPath())
+                    .addToBackStack(folderItemExplorer.getPath())
+                    .commit();
+        }
     }
 
     @Override

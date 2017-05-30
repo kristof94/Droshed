@@ -27,8 +27,6 @@
             android:label="@string/title_activity_login" />
         <activity
             android:name=".activity.HomeActivity.HomeActivity"
-            android:configChanges="orientation|keyboardHidden"
-            android:screenOrientation="portrait"
             android:theme="@style/AppTheme" />
         <activity
             android:name=".activity.ModelActivity.ModelActivity"

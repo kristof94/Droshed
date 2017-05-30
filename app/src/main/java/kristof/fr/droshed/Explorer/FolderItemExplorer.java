@@ -11,6 +11,10 @@ import java.util.ArrayList;
 
 public class FolderItemExplorer extends ItemExplorer {
 
+    public void setItemExplorerList(ArrayList<ItemExplorer> itemExplorerList) {
+        this.itemExplorerList = itemExplorerList;
+    }
+
     private ArrayList<ItemExplorer> itemExplorerList;
 
     public FolderItemExplorer(String type, String name,int id,String path,ArrayList<ItemExplorer> list) {

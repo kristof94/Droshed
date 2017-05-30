@@ -2,8 +2,10 @@ package kristof.fr.droshed.activity.HomeActivity;
 
 import android.app.Fragment;
 import android.content.Context;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
+import android.support.design.widget.Snackbar;
 import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.View;
@@ -11,8 +13,8 @@ import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.GridView;
 
+import java.io.File;
 import java.util.ArrayList;
-import java.util.List;
 
 import kristof.fr.droshed.Explorer.FileItemExplorer;
 import kristof.fr.droshed.Explorer.FolderItemExplorer;
@@ -28,10 +30,9 @@ import kristof.fr.droshed.custom.CustomItemAdapter;
 public class CustomFragment extends Fragment {
 
     public ArrayList<ItemExplorer> getItemExplorerList() {
-        return itemExplorerList;
+        return folderItemExplorer.getItemExplorerList();
     }
 
-    private ArrayList<ItemExplorer> itemExplorerList;
     private CustomItemAdapter customAdapter;
     private FolderManager link;
     private FolderItemExplorer folderItemExplorer;
@@ -69,19 +70,19 @@ public class CustomFragment extends Fragment {
         System.out.println("onCreateFuckingFragment");
         setRetainInstance(true);
         setHasOptionsMenu(true);
-        if (itemExplorerList == null) {
-            itemExplorerList = new ArrayList<>();
-        }
+
         Bundle bundle = getArguments();
         if (bundle != null) {
             folderItemExplorer = bundle.getParcelable("folderItemExplorer");
-            itemExplorerList.addAll(folderItemExplorer.getItemExplorerList());
+            if (folderItemExplorer.getItemExplorerList() == null) {
+                folderItemExplorer.setItemExplorerList(new ArrayList<>());
+            }
         }
     }
 
     @Override
     public void onSaveInstanceState(Bundle outState) {
-        outState.putParcelableArrayList("itemExplorerList", itemExplorerList);
+        outState.putParcelableArrayList("itemExplorerList", folderItemExplorer.getItemExplorerList());
         outState.putParcelable("itemExplorer", folderItemExplorer);
         super.onSaveInstanceState(outState);
     }
@@ -118,13 +119,32 @@ public class CustomFragment extends Fragment {
                 }
             }
         });
-        customAdapter = new CustomItemAdapter(getActivity(), itemExplorerList);
+        gridView.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
+            @Override
+            public boolean onItemLongClick(AdapterView<?> parent, View view, int position, long id) {
+                ItemExplorer itemExplorer = (ItemExplorer) parent.getItemAtPosition(position);
+                Snackbar bar = Snackbar.make(view, "Remove "+itemExplorer.toString(), Snackbar.LENGTH_INDEFINITE).setActionTextColor(Color.RED)
+                        .setAction("Remove", new View.OnClickListener() {
+                            @Override
+                            public void onClick(View v) {
+                                System.out.println(folderItemExplorer.getItemExplorerList().remove(itemExplorer));
+                                customAdapter.notifyDataSetChanged();
+                                File file = new File(itemExplorer.getPath());
+                                file.delete();
+                            }
+                        });
+                bar.show();
+                return true;
+            }
+        });
+
+        customAdapter = new CustomItemAdapter(getActivity(), folderItemExplorer.getItemExplorerList());
         gridView.setAdapter(customAdapter);
         return view;
     }
 
     public void updateGridViewList(ArrayList<ItemExplorer> s) {
-        itemExplorerList = s;
+        folderItemExplorer.setItemExplorerList(s);
         customAdapter.notifyDataSetChanged();
     }
 }
