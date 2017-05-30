@@ -94,7 +94,7 @@ public class ListModelActivity extends AppCompatActivity {
             new CustomAsyncTask().execute(url);
         } catch (Exception e) {
             e.printStackTrace();
-            Snackbar.make(listView, "Erreur de connexion", Snackbar.LENGTH_SHORT).show();
+            Snackbar.make(listView, getString(R.string.error_connexion), Snackbar.LENGTH_SHORT).show();
         }
     }
 

@@ -123,8 +123,8 @@ public class CustomFragment extends Fragment {
             @Override
             public boolean onItemLongClick(AdapterView<?> parent, View view, int position, long id) {
                 ItemExplorer itemExplorer = (ItemExplorer) parent.getItemAtPosition(position);
-                Snackbar bar = Snackbar.make(view, "Remove "+itemExplorer.toString(), Snackbar.LENGTH_INDEFINITE).setActionTextColor(Color.RED)
-                        .setAction("Remove", new View.OnClickListener() {
+                Snackbar bar = Snackbar.make(view, getString(R.string.delete)+itemExplorer.toString(), Snackbar.LENGTH_INDEFINITE).setActionTextColor(Color.RED)
+                        .setAction(getString(R.string.delete), new View.OnClickListener() {
                             @Override
                             public void onClick(View v) {
                                 System.out.println(folderItemExplorer.getItemExplorerList().remove(itemExplorer));

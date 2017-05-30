@@ -66,7 +66,7 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
         setToolbar();
         initUiElements();
         hashMap = new HashMap<>();
-        contextFile = new File(getFilesDir().getPath() + "/datasheet");
+        contextFile = new File(getFilesDir().getPath() + getString(R.string.datasheet));
         //manage rotation
         if (savedInstanceState != null) {
             manageRotation(savedInstanceState);
@@ -134,11 +134,11 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
     private void refreshListFolder() {
         URL url;
         try {
-            url = new URL(serverInfo + "/data");
+            url = new URL(serverInfo + getString(R.string.datasheet));
             new CustomAsyncTask("GET").execute(url);
         } catch (Exception e) {
             e.printStackTrace();
-            Snackbar.make(drawer, "Erreur de connexion", Snackbar.LENGTH_SHORT).show();
+            Snackbar.make(drawer, getString(R.string.error_connexion), Snackbar.LENGTH_SHORT).show();
         }
     }
 
@@ -363,7 +363,7 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
                                             itemExplorer1.getType(),
                                             itemExplorer1.getName(),
                                             itemExplorer1.getLayoutID(),
-                                            itemExplorer1.getPath().replace("datasheet", contextFile.getPath()),
+                                            itemExplorer1.getPath().replace(getString(R.string.datasheet), contextFile.getPath()),
                                             ((FolderItemExplorer) itemExplorer1).getItemExplorerList()
                                     );
                                     itemExplorer.getItemExplorerList().add(folderItemExplorer);
@@ -392,7 +392,7 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
         protected void onPostExecute(ItemExplorer s) {
             super.onPostExecute(s);
             if (s == null) {
-                Snackbar.make(drawer, "Erreur de connexion", Snackbar.LENGTH_SHORT).show();
+                Snackbar.make(drawer, getString(R.string.error_connexion), Snackbar.LENGTH_SHORT).show();
             } else {
                 if (s instanceof FolderItemExplorer) {
                     FolderItemExplorer folderItemExplorer = (FolderItemExplorer) s;
