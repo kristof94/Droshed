@@ -35,7 +35,6 @@ Now "http://example.com/project/data/lastversion" should return 43
 
 from functools import wraps
 from flask import Flask, request, make_response, Response, jsonify
-from lxml import etree
 
 import os, sys, base64, glob, json
 
