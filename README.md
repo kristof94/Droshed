@@ -15,5 +15,8 @@ The format file is **user:password**.
 
 # How to use Droshed
 
+Launch script called launchServer.sh to start server.
+_The server is binding on port 4545_.
+
 Once you are connected, you could edit your own files or create new spreadsheet.
 To create new spreadsheet, touch add-Button, choose a model and edit your file.
