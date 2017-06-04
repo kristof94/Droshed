@@ -7,7 +7,6 @@ import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.design.widget.Snackbar;
 import android.view.LayoutInflater;
-import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
@@ -38,7 +37,6 @@ public class CustomFragment extends Fragment {
     private FolderItemExplorer folderItemExplorer;
 
     public interface FolderManager {
-        void refresh(CustomFragment customFragment);
 
         CustomFragment getFragment(FolderItemExplorer fileItemExplorer);
 
@@ -54,23 +52,12 @@ public class CustomFragment extends Fragment {
     }
 
     @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        switch (item.getItemId()) {
-            case R.id.refresh:
-                link.refresh(this);
-                return true;
-            default:
-                return super.onOptionsItemSelected(item);
-        }
-    }
-
-    @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         System.out.println("onCreateFuckingFragment");
         setRetainInstance(true);
         setHasOptionsMenu(true);
-
+        System.out.println("onCReate");
         Bundle bundle = getArguments();
         if (bundle != null) {
             folderItemExplorer = bundle.getParcelable("folderItemExplorer");

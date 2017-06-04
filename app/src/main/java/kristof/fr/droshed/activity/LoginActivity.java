@@ -13,6 +13,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.text.TextUtils;
 import android.util.Base64;
 import android.view.View;
+import android.view.inputmethod.EditorInfo;
 import android.widget.AutoCompleteTextView;
 import android.widget.CheckBox;
 import android.widget.EditText;
@@ -72,9 +73,14 @@ public class LoginActivity extends AppCompatActivity {
     private void initUiElements() {
         parentView = findViewById(R.id.parentLayout);
         userView = (AutoCompleteTextView) findViewById(R.id.user);
+        userView.setImeOptions( EditorInfo.IME_FLAG_NO_EXTRACT_UI);
         urlView = (EditText) findViewById(R.id.server);
+        urlView.setImeOptions( EditorInfo.IME_FLAG_NO_EXTRACT_UI);
+
         checkBox = (CheckBox) findViewById(R.id.checkBox);
         passwordView = (EditText) findViewById(R.id.password);
+        passwordView.setImeOptions( EditorInfo.IME_FLAG_NO_EXTRACT_UI);
+
         loginView = findViewById(R.id.login_form);
         progressView = findViewById(R.id.login_progress);
         sharedPreferences = getSharedPreferences(getString(R.string.loginKey), 0);

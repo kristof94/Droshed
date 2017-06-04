@@ -39,7 +39,7 @@
     <string name="title_activity_create_spread_sheet">CreateSpreadSheetActivity</string>
     <string name="section_format">Hello World from section: %1$d</string>
 
-    <string name="error_connexion">Erreur de connexion</string>
+    <string name="error_connexion">Connexion impossible</string>
     <string name="delete">Remove</string>
     <string name="datasheet">/datasheet</string>
 

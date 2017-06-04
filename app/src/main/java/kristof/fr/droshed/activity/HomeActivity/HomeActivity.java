@@ -16,7 +16,6 @@ import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
-import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.FrameLayout;
@@ -100,7 +99,6 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
         }
     }
 
-
     @Override
     protected void onSaveInstanceState(Bundle outState) {
         outState.putParcelable("serverInfo", serverInfo);
@@ -179,50 +177,12 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
         }
     }
 
-
     @Override
     public boolean onNavigationItemSelected(@NonNull MenuItem item) {
         //int id = item.getItemId();
-        //CLEAR FRAGMENT STACK
-        /*getFragmentManager().popBackStackImmediate(null, FragmentManager.POP_BACK_STACK_INCLUSIVE);
-        android.app.FragmentTransaction fragmentTransaction = getFragmentManager().beginTransaction();
-
-        getFragmentManager().popBackStackImmediate(null, FragmentManager.POP_BACK_STACK_INCLUSIVE);
-        /*if (id == R.id.nav_data) {
-            currenFragment = hashMap.get(dataTag);
-            fragmentTransaction.replace(R.id.flContent,currenFragment,dataTag).commit();
-        } else if (id == R.id.nav_model) {
-            CustomFragment customFragmentModel = hashMap.get(modelTag);
-            currenFragment = customFragmentModel;
-            fragmentTransaction.replace(R.id.flContent,currenFragment,modelTag).commit();
-            if(customFragmentModel.getItemExplorerList()==null || customFragmentModel.getItemExplorerList().isEmpty()){
-                refreshListFolder(modelTag,customFragmentModel);
-            }
-        }*/
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.homeDrawerLayout);
         drawer.closeDrawer(GravityCompat.START);
         return true;
-    }
-
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.main, menu);
-        return true;
-    }
-
-    @Override
-    public void refresh(CustomFragment customFragment) {
-        /*
-        URL url;
-        try {
-            url = new URL(serverInfo + customFragment.getPath());
-            new CustomAsyncTask("PUT").execute(url);
-        } catch (Exception e) {
-            e.printStackTrace();
-            Snackbar.make(drawer, "Erreur de connexion", Snackbar.LENGTH_SHORT).show();
-        }*/
-        //Toast.makeText(this,"Not implemented",Toast.LENGTH_SHORT);
     }
 
     @Override
@@ -250,6 +210,7 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
         bundle.putParcelable("serverInfo", serverInfo);
         bundle.putBoolean("isNewFile", false);
         bundle.putParcelable("fileItemExplorer", fileItemExplorer);
+        bundle.putParcelable("currentFolderItemExplorer", currentFolderItemExplorer);
         mainIntent.putExtras(bundle);
         startActivityForResult(mainIntent, PICK_FILE);
     }
@@ -263,6 +224,7 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
             if (resultCode == RESULT_OK) {
                 Bundle bundle = data.getExtras();
                 FileItemExplorer fileItemExplorer = bundle.getParcelable("fileItemExplorer");
+                currentFolderItemExplorer = bundle.getParcelable("currentFolderItemExplorer");
                 CustomFragment customFragment = hashMap.get(currentFolderItemExplorer);
                 if (customFragment != null) {
                     ArrayList<ItemExplorer> itemExplorers = customFragment.getItemExplorerList();
@@ -271,42 +233,11 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
                         customFragment.updateGridViewList(itemExplorers);
                     }
                 }
+            }else{
+                Snackbar.make(drawer, getString(R.string.error_connexion), Snackbar.LENGTH_SHORT).show();
             }
         }
     }
-
-    /*private FolderItemExplorer listFile(File root) throws IOException {
-        System.out.println(root.getPath());
-        FolderItemExplorer itemExplorer = null;
-        //File contextFile = new File(getFilesDir().getPath() + "/data");
-        ArrayList<ItemExplorer> itemExplorers = new ArrayList<>();
-        File[] listFiles = root.listFiles();
-        if (listFiles != null) {
-            for (File f : listFiles) {
-                if (f.isFile()) {
-                    //String type, String name,int id,String path,int version
-                    String content = ModelActivity.readFile(f);
-                    int version = 0;
-                    try {
-                        JSONObject jsonObject = new JSONObject(content);
-                        version = jsonObject.getInt("version");
-                    } catch (JSONException e) {
-                        e.printStackTrace();
-                    }
-                    ItemExplorer itemExplorerFile = new FileItemExplorer("file", f.getName(), R.layout.custom_item_layout, f.getPath(), version);
-                    itemExplorers.add(itemExplorerFile);
-                }
-                if (f.isDirectory()) {
-                    ItemExplorer folder = listFile(f);
-                    itemExplorers.add(folder);
-                }
-            }
-        }
-        System.out.println(root.getName());
-        itemExplorer = new FolderItemExplorer("directory", root.getName(), R.layout.custom_item_folder_layout, root.getPath(), itemExplorers);
-        return itemExplorer;
-    }*/
-
 
     private class CustomAsyncTask extends AsyncTask<URL, Void, ItemExplorer> {
 

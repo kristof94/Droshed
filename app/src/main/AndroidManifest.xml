@@ -30,6 +30,7 @@
             android:theme="@style/AppTheme" />
         <activity
             android:name=".activity.ModelActivity.ModelActivity"
+            android:windowSoftInputMode="stateVisible|adjustResize"
             android:parentActivityName="activity.HomeActivity.HomeActivity">
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"

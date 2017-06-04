@@ -1,6 +1,8 @@
 package kristof.fr.droshed.gridobject;
 
-import org.json.JSONObject;
+import android.os.Parcel;
+import android.os.Parcelable;
+
 import org.w3c.dom.Document;
 
 import java.util.ArrayList;
@@ -10,10 +12,28 @@ import java.util.ArrayList;
  * on 5/31/17.
  */
 
-public class Grid {
+public class Grid implements Parcelable {
 
     private ArrayList<Row> rows ;
     private ArrayList<RowValue> rowValues;
+
+    protected Grid(Parcel in) {
+        rows = in.createTypedArrayList(Row.CREATOR);
+        rowValues = in.createTypedArrayList(RowValue.CREATOR);
+        title = in.readString();
+    }
+
+    public static final Creator<Grid> CREATOR = new Creator<Grid>() {
+        @Override
+        public Grid createFromParcel(Parcel in) {
+            return new Grid(in);
+        }
+
+        @Override
+        public Grid[] newArray(int size) {
+            return new Grid[size];
+        }
+    };
 
     public void setTitle(String title) {
         this.title = title;
@@ -45,5 +65,17 @@ public class Grid {
 
     public ArrayList<RowValue> getRowValues() {
         return rowValues;
+    }
+
+    @Override
+    public int describeContents() {
+        return 0;
+    }
+
+    @Override
+    public void writeToParcel(Parcel dest, int flags) {
+        dest.writeTypedList(rows);
+        dest.writeTypedList(rowValues);
+        dest.writeString(title);
     }
 }

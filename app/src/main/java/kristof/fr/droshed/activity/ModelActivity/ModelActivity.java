@@ -6,8 +6,6 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.support.design.widget.Snackbar;
-import android.support.design.widget.TabLayout;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.text.InputType;
@@ -31,10 +29,7 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
-import java.io.BufferedReader;
 import java.io.DataOutputStream;
-import java.io.File;
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.net.HttpURLConnection;
@@ -52,7 +47,7 @@ import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
 import kristof.fr.droshed.Explorer.FileItemExplorer;
-import kristof.fr.droshed.JsonUtil;
+import kristof.fr.droshed.Explorer.FolderItemExplorer;
 import kristof.fr.droshed.R;
 import kristof.fr.droshed.ServerInfo;
 import kristof.fr.droshed.Util;
@@ -64,18 +59,15 @@ import kristof.fr.droshed.gridobject.RowValue;
 
 public class ModelActivity extends AppCompatActivity {
 
-    public static final String EMPTYTAG = "empty___";
     private ProgressBar progressBar;
-    private View drawer;
     private TableLayout tableLayout;
     private EditText titleEditText;
     private LinearLayout linearLayout;
     private ServerInfo serverInfo;
     private FileItemExplorer fileItemExplorer;
+    private FolderItemExplorer currentFolderItemExplorer;
     private boolean isNewFile;
-    private Grid gridData;
-    private String oldContent;
-    private boolean isErrorPresent = false;
+    private Grid grid;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -85,7 +77,17 @@ public class ModelActivity extends AppCompatActivity {
         titleEditText = (EditText) findViewById(R.id.titleTextView);
         progressBar = (ProgressBar) findViewById(R.id.progressBar);
         tableLayout = (TableLayout) findViewById(R.id.tableau);
-        drawer = findViewById(R.id.drawer);
+
+        if(savedInstanceState!=null){
+            serverInfo = savedInstanceState.getParcelable("serverInfo");
+            fileItemExplorer = savedInstanceState.getParcelable("fileItemExplorer");
+            isNewFile = savedInstanceState.getBoolean("isNewFile");
+            grid = savedInstanceState.getParcelable("grid");
+            currentFolderItemExplorer = savedInstanceState.getParcelable("currentFolderItemExplorer");
+            fillTableauWithGrid(grid);
+            return;
+        }
+
         Intent intent = getIntent();
         if (intent != null) {
             Bundle bundle = intent.getExtras();
@@ -94,10 +96,24 @@ public class ModelActivity extends AppCompatActivity {
                     serverInfo = bundle.getParcelable("serverInfo");
                     isNewFile = bundle.getBoolean("isNewFile");
                     fileItemExplorer = bundle.getParcelable("fileItemExplorer");
+                    currentFolderItemExplorer = bundle.getParcelable("currentFolderItemExplorer");
+                    assert fileItemExplorer != null;
                     downloadXMLAndParseFile(serverInfo + "/" + fileItemExplorer.getPath());
                 }
             }
         }
+    }
+
+
+
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        outState.putParcelable("serverInfo", serverInfo);
+        outState.putParcelable("fileItemExplorer", fileItemExplorer);
+        outState.putBoolean("isNewFile",isNewFile);
+        outState.putParcelable("grid",grid);
+        outState.putParcelable("currentFolderItemExplorer",currentFolderItemExplorer);
+        super.onSaveInstanceState(outState);
     }
 
     private AlertDialog createInputTextBox() {
@@ -164,8 +180,6 @@ public class ModelActivity extends AppCompatActivity {
     }
 
     private String createXML(Grid grid) {
-        Document document = grid.getDocument();
-        Element rootElement = document.getDocumentElement();
         Document doc;
         try {
             doc = DocumentBuilderFactory.newInstance().newDocumentBuilder().newDocument();
@@ -178,27 +192,19 @@ public class ModelActivity extends AppCompatActivity {
             Element elementPath = doc.createElement("path");
             elementDoc.appendChild(elementPath);
 
-            String path = rootElement.getElementsByTagName("path").item(0).getTextContent();
-            elementPath.setTextContent(path);
 
             Element elementVersion = doc.createElement("version");
             elementDoc.appendChild(elementVersion);
 
-            String version = rootElement.getElementsByTagName("version").item(0).getTextContent();
-            elementVersion.setTextContent(version);
 
             Element elementName = doc.createElement("name");
             elementDoc.appendChild(elementName);
-
-            String name = rootElement.getElementsByTagName("name").item(0).getTextContent();
             elementName.setTextContent(grid.getTitle());
 
             Element elementRows = doc.createElement("rows");
             elementDoc.appendChild(elementRows);
 
-            ArrayList<Row> listRow = getRowsModel(rootElement, "rows");
-
-            for (Row row : listRow) {
+            for (Row row : grid.getRows()) {
                 Element elementRow = doc.createElement("row");
                 elementRows.appendChild(elementRow);
 
@@ -254,9 +260,9 @@ public class ModelActivity extends AppCompatActivity {
     @Override
     public void onBackPressed() {
         String title = titleEditText.getText().toString();
-        gridData.setTitle(title);
-        String content = createXML(gridData);
-        if ((TextUtils.isEmpty(title) && TextUtils.isEmpty(content)) || (title.equals(fileItemExplorer.getName()) && content.equals(oldContent))) {
+        grid.setTitle(title);
+        String content = createXML(grid);
+        if ((TextUtils.isEmpty(title) && TextUtils.isEmpty(content))) {
             setResult(RESULT_CANCELED);
             finish();
         }
@@ -356,19 +362,19 @@ public class ModelActivity extends AppCompatActivity {
         }
     }
 
-    private void fillTableauWithGrid(Grid grid) throws JSONException {
+    private void fillTableauWithGrid(Grid grid) {
         titleEditText.setText(grid.getTitle());
-        int index = 0;
         for (Row row : grid.getRows()) {
             TextView textView = new TextView(this);
+            textView.setGravity(Gravity.CENTER);
             textView.setText(row.getName());
             TableRow tableRow = new TableRow(this);
             tableRow.setBackgroundResource(R.drawable.border);
             tableRow.addView(textView);
-
             for (int i = 0; i < 40; i++) {
                 EditText editText = new EditText(this);
                 editText.setBackgroundResource(R.drawable.border);
+                editText.setImeOptions( EditorInfo.IME_FLAG_NO_EXTRACT_UI);
                 if (row.getType().equals("int")) {
                     editText.setInputType(InputType.TYPE_CLASS_NUMBER);
                     editText.setGravity(Gravity.CENTER);
@@ -427,14 +433,12 @@ public class ModelActivity extends AppCompatActivity {
                 }
                 if (row.getType().equals("string")) {
                     editText.setSingleLine(false);
-                    editText.setImeOptions(EditorInfo.IME_FLAG_NO_ENTER_ACTION);
+                    //editText.setImeOptions(EditorInfo.IME_FLAG_NO_ENTER_ACTION);
                 }
                 editText.setWidth(200);
                 tableRow.addView(editText);
             }
-
             tableLayout.addView(tableRow);
-            index++;
         }
 
         int size = grid.getRowValues().size();
@@ -531,6 +535,7 @@ public class ModelActivity extends AppCompatActivity {
                     if (responseCode == 200) {
                         String xml = Util.getStringFromInputStream(urlConnection.getInputStream());
                         Document document = XmlUtil.getDomElement(xml);
+                        assert document != null;
                         Element rootElement = document.getDocumentElement();
                         NodeList nodeList = rootElement.getElementsByTagName("name");
                         String title = "";
@@ -538,9 +543,6 @@ public class ModelActivity extends AppCompatActivity {
                             title = nodeList.item(0).getTextContent();
                         }
                         return new Grid(getRowsModel(rootElement, "rows"), title, getRowsValue(rootElement, "columns"), document);
-                    } else {
-                        Snackbar.make(drawer, "Erreur de connexion : " + responseCode, Snackbar.LENGTH_SHORT).show();
-                        return null;
                     }
                 } catch (IOException e) {
                     e.printStackTrace();
@@ -553,15 +555,14 @@ public class ModelActivity extends AppCompatActivity {
         }
 
         @Override
-        protected void onPostExecute(Grid grid) {
-            super.onPostExecute(grid);
-            if (grid != null) {
-                try {
-                    fillTableauWithGrid(grid);
-                } catch (JSONException e) {
-                    e.printStackTrace();
-                }
-                gridData = grid;
+        protected void onPostExecute(Grid gridData) {
+            super.onPostExecute(gridData);
+            if (gridData != null) {
+                grid = gridData;
+                fillTableauWithGrid(grid);
+            } else {
+                setResult(RESULT_CANCELED);
+                finish();
             }
             displayProgressBar(false);
         }
@@ -573,40 +574,24 @@ public class ModelActivity extends AppCompatActivity {
         }
     }
 
-    public static String readFile(File tempFile) throws IOException {
-        /** Getting a reference to temporary file, if created earlier */
-        StringBuilder sb = new StringBuilder();
-        FileReader fReader = null;
-        BufferedReader bufferedReader = null;
-        try {
-            fReader = new FileReader(tempFile);
-            bufferedReader = new BufferedReader(fReader);
-            String strLine = null;
-            /** Reading the contents of the file , line by line */
-            while ((strLine = bufferedReader.readLine()) != null) {
-                sb.append(strLine);
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        } finally {
-            if (bufferedReader != null) {
-                bufferedReader.close();
-            }
-            if (fReader != null) {
-                fReader.close();
-            }
-        }
-        return sb.toString();
-    }
-
     private void displayProgressBar(boolean show) {
         int shortAnimTime = getResources().getInteger(android.R.integer.config_shortAnimTime);
+
         linearLayout.setVisibility(show ? View.GONE : View.VISIBLE);
         linearLayout.animate().setDuration(shortAnimTime).alpha(
                 show ? 0 : 1).setListener(new AnimatorListenerAdapter() {
             @Override
             public void onAnimationEnd(Animator animation) {
                 linearLayout.setVisibility(show ? View.GONE : View.VISIBLE);
+            }
+        });
+
+        titleEditText.setVisibility(show ? View.GONE : View.VISIBLE);
+        titleEditText.animate().setDuration(shortAnimTime).alpha(
+                show ? 0 : 1).setListener(new AnimatorListenerAdapter() {
+            @Override
+            public void onAnimationEnd(Animator animation) {
+                titleEditText.setVisibility(show ? View.GONE : View.VISIBLE);
             }
         });
 
@@ -618,16 +603,6 @@ public class ModelActivity extends AppCompatActivity {
                 progressBar.setVisibility(show ? View.VISIBLE : View.GONE);
             }
         });
-    }
-
-    private void uploadSpreadSheet(FileItemExplorer fileItemExplorer, String content) {
-        URL url;
-        try {
-            url = new URL(serverInfo + "/data");
-            new UploadCustomAsyncTask(JsonUtil.createJsonFileUploadString(fileItemExplorer, content).toString()).execute(url);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
     }
 
     private void downloadXMLAndParseFile(String urlPath) {
