@@ -18,6 +18,10 @@ public abstract class ItemExplorer implements Parcelable{
         return path;
     }
 
+    public void setPath(String path) {
+        this.path = path;
+    }
+
     protected String path;
 
     @Override
@@ -39,6 +43,10 @@ public abstract class ItemExplorer implements Parcelable{
         result = 31 * result + (name != null ? name.hashCode() : 0);
         result = 31 * result + layoutID;
         return result;
+    }
+
+    public void setName(String name) {
+        this.name = name;
     }
 
     protected String name;

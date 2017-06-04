@@ -17,6 +17,9 @@ import android.widget.AutoCompleteTextView;
 import android.widget.CheckBox;
 import android.widget.EditText;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
@@ -24,6 +27,7 @@ import java.net.URL;
 
 import kristof.fr.droshed.R;
 import kristof.fr.droshed.ServerInfo;
+import kristof.fr.droshed.Util;
 import kristof.fr.droshed.activity.HomeActivity.HomeActivity;
 
 /**
@@ -195,7 +199,7 @@ public class LoginActivity extends AppCompatActivity {
      * Represents an asynchronous login/registration task used to authenticate
      * the user.
      */
-    private class UserLoginTask extends AsyncTask<URL, Void, Boolean> {
+    private class UserLoginTask extends AsyncTask<URL, Void, String> {
 
         private final String url;
         private final String user;
@@ -218,7 +222,7 @@ public class LoginActivity extends AppCompatActivity {
         }
 
         @Override
-        protected Boolean doInBackground(URL... params) {
+        protected String doInBackground(URL... params) {
             for (URL url : params) {
                 HttpURLConnection urlConnection = null;
                 try {
@@ -231,7 +235,9 @@ public class LoginActivity extends AppCompatActivity {
                     // Starts the query
                     urlConnection.connect();
                     int response = urlConnection.getResponseCode();
-                    return (response == 200);
+                    if (response == 200){
+                        return Util.getStringFromInputStream(urlConnection.getInputStream());
+                    }
                 } catch (IOException e) {
                     e.printStackTrace();
                     error = e.getMessage();
@@ -240,18 +246,25 @@ public class LoginActivity extends AppCompatActivity {
                         urlConnection.disconnect();
                 }
             }
-            return false;
+            return null;
         }
 
         @Override
-        protected void onPostExecute(final Boolean success) {
+        protected void onPostExecute(final String result) {
             mAuthTask = null;
-            if (success) {
+            if (result!=null) {
                 if (checkBox.isChecked()) {
                     saveData(url, user, password);
                 }
-                ServerInfo serverInfo = new ServerInfo(url, authBase64);
-                startMainActivityAndExitLoginActivity(serverInfo);
+                try {
+                    JSONObject jsonObject = new JSONObject(result);
+                    String dataPath = jsonObject.getString("dataDir");
+                    String modelPath = jsonObject.getString("modelDir");
+                    ServerInfo serverInfo = new ServerInfo(url, authBase64,dataPath,modelPath);
+                    startMainActivityAndExitLoginActivity(serverInfo);
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
             } else {
                 Snackbar.make(parentView, error, Snackbar.LENGTH_SHORT).show();
             }

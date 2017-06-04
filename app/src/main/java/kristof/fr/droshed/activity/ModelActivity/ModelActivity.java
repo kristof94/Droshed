@@ -7,60 +7,84 @@ import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.design.widget.Snackbar;
+import android.support.design.widget.TabLayout;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
+import android.text.InputType;
 import android.text.TextUtils;
+import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.inputmethod.EditorInfo;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
+import android.widget.TableLayout;
+import android.widget.TableRow;
 import android.widget.TextView;
 
 import org.json.JSONException;
-import org.json.JSONObject;
+import org.w3c.dom.Attr;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
-import java.io.OutputStreamWriter;
+import java.io.StringWriter;
 import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.ArrayList;
+
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.transform.OutputKeys;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerException;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
 
 import kristof.fr.droshed.Explorer.FileItemExplorer;
-import kristof.fr.droshed.Explorer.FolderItemExplorer;
 import kristof.fr.droshed.JsonUtil;
 import kristof.fr.droshed.R;
 import kristof.fr.droshed.ServerInfo;
 import kristof.fr.droshed.Util;
+import kristof.fr.droshed.XmlUtil;
+import kristof.fr.droshed.gridobject.Column;
+import kristof.fr.droshed.gridobject.Grid;
+import kristof.fr.droshed.gridobject.Row;
+import kristof.fr.droshed.gridobject.RowValue;
 
 public class ModelActivity extends AppCompatActivity {
 
+    public static final String EMPTYTAG = "empty___";
     private ProgressBar progressBar;
     private View drawer;
-    private EditText editText;
+    private TableLayout tableLayout;
     private EditText titleEditText;
-    private TextView versionTextView;
     private LinearLayout linearLayout;
     private ServerInfo serverInfo;
     private FileItemExplorer fileItemExplorer;
     private boolean isNewFile;
-    private FolderItemExplorer currentFolderItemExplorer;
+    private Grid gridData;
     private String oldContent;
+    private boolean isErrorPresent = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_model);
         linearLayout = (LinearLayout) findViewById(R.id.linearLayoutId);
-        editText = (EditText) findViewById(R.id.contentTextView);
         titleEditText = (EditText) findViewById(R.id.titleTextView);
-        versionTextView = (TextView) findViewById(R.id.versionTextView);
         progressBar = (ProgressBar) findViewById(R.id.progressBar);
+        tableLayout = (TableLayout) findViewById(R.id.tableau);
         drawer = findViewById(R.id.drawer);
         Intent intent = getIntent();
         if (intent != null) {
@@ -70,27 +94,13 @@ public class ModelActivity extends AppCompatActivity {
                     serverInfo = bundle.getParcelable("serverInfo");
                     isNewFile = bundle.getBoolean("isNewFile");
                     fileItemExplorer = bundle.getParcelable("fileItemExplorer");
-                    if (isNewFile) {
-                        titleEditText.setHint("New file");
-                        currentFolderItemExplorer = bundle.getParcelable("currentFolderItemExplorer");
-                        System.out.println("New file "+currentFolderItemExplorer.getPath());
-                        versionTextView.setText("Version "+0);
-                    } else {
-                        File fileOnDevice = new File(fileItemExplorer.getPath());
-                        if (fileOnDevice.exists()) {
-                            new CustomReadFileAsyncTask().execute(fileOnDevice);
-                        } else if (serverInfo != null) {
-                            downloadXMLAndParseFile(serverInfo + "/" + fileItemExplorer.getPath());
-                        }
-                        titleEditText.setText(fileItemExplorer.getName());
-                        versionTextView.setText("Version "+fileItemExplorer.getVersion());
-                    }
+                    downloadXMLAndParseFile(serverInfo + "/" + fileItemExplorer.getPath());
                 }
             }
         }
     }
 
-    private AlertDialog createInputTextBox(){
+    private AlertDialog createInputTextBox() {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle("Title");
         // I'm using fragment here so I'm using getView() to provide ViewGroup
@@ -124,12 +134,11 @@ public class ModelActivity extends AppCompatActivity {
 
         builder.setTitle("Save document ?");
         builder.setMessage("Save changes to document before closing?");
-
+        builder.setCancelable(true);
         builder.setPositiveButton("YES", new DialogInterface.OnClickListener() {
             public void onClick(DialogInterface dialog, int which) {
                 createInputTextBox().show();
                 dialog.dismiss();
-
             }
         });
 
@@ -144,136 +153,125 @@ public class ModelActivity extends AppCompatActivity {
         return builder.create();
     }
 
+    public static String printXmlDocument(Document document) throws TransformerException {
+        TransformerFactory tf = TransformerFactory.newInstance();
+        Transformer transformer = tf.newTransformer();
+        transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "yes");
+        StringWriter writer = new StringWriter();
+        transformer.transform(new DOMSource(document), new StreamResult(writer));
+        String output = writer.getBuffer().toString().replaceAll("\n|\r", "");
+        return output;
+    }
+
+    private String createXML(Grid grid) {
+        Document document = grid.getDocument();
+        Element rootElement = document.getDocumentElement();
+        Document doc;
+        try {
+            doc = DocumentBuilderFactory.newInstance().newDocumentBuilder().newDocument();
+            //create ROWS ARRAY
+
+            Element elementDoc = doc.createElement("document");
+            doc.appendChild(elementDoc);
+            //elementDoc = rootElement;
+
+            Element elementPath = doc.createElement("path");
+            elementDoc.appendChild(elementPath);
+
+            String path = rootElement.getElementsByTagName("path").item(0).getTextContent();
+            elementPath.setTextContent(path);
+
+            Element elementVersion = doc.createElement("version");
+            elementDoc.appendChild(elementVersion);
+
+            String version = rootElement.getElementsByTagName("version").item(0).getTextContent();
+            elementVersion.setTextContent(version);
+
+            Element elementName = doc.createElement("name");
+            elementDoc.appendChild(elementName);
+
+            String name = rootElement.getElementsByTagName("name").item(0).getTextContent();
+            elementName.setTextContent(grid.getTitle());
+
+            Element elementRows = doc.createElement("rows");
+            elementDoc.appendChild(elementRows);
+
+            ArrayList<Row> listRow = getRowsModel(rootElement, "rows");
+
+            for (Row row : listRow) {
+                Element elementRow = doc.createElement("row");
+                elementRows.appendChild(elementRow);
+
+                Attr attribute = doc.createAttribute("name");
+                attribute.setValue(row.getName());
+
+                Attr attributeType = doc.createAttribute("type");
+                attributeType.setValue(row.getType());
+
+                elementRow.setAttributeNode(attribute);
+                elementRow.setAttributeNode(attributeType);
+            }
+
+            Element rootRows = doc.createElement("columns");
+            elementDoc.appendChild(rootRows);
+            for (int i = 0; i < tableLayout.getChildCount(); i++) {
+                View view = tableLayout.getChildAt(i);
+                //create A ROW WITH INDEX
+
+                if (view instanceof TableRow) {
+                    Element row = doc.createElement("row");
+                    rootRows.appendChild(row);
+                    Attr attribute = doc.createAttribute("index");
+                    attribute.setValue(String.valueOf(i));
+                    row.setAttributeNode(attribute);
+
+                    TableRow tableRow = (TableRow) view;
+
+                    for (int u = 0; u < tableRow.getChildCount(); u++) {
+                        View editView = tableRow.getChildAt(u);
+                        if (editView instanceof EditText) {
+                            EditText editText = (EditText) editView;
+                            String value = editText.getText().toString();
+                            Element column = doc.createElement("column");
+                            row.appendChild(column);
+                            Attr attribute2 = doc.createAttribute("index");
+                            attribute2.setValue(String.valueOf(u));
+                            column.setAttributeNode(attribute2);
+                            column.setTextContent(value);
+                        }
+                    }
+                }
+            }
+            return printXmlDocument(doc);
+        } catch (ParserConfigurationException e) {
+            e.printStackTrace();
+        } catch (TransformerException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
     @Override
     public void onBackPressed() {
         String title = titleEditText.getText().toString();
-        String content = editText.getText().toString();
-
+        gridData.setTitle(title);
+        String content = createXML(gridData);
         if ((TextUtils.isEmpty(title) && TextUtils.isEmpty(content)) || (title.equals(fileItemExplorer.getName()) && content.equals(oldContent))) {
             setResult(RESULT_CANCELED);
             finish();
         }
-
-        if(TextUtils.isEmpty(title) && !TextUtils.isEmpty(content)){
+        if (TextUtils.isEmpty(title) && !TextUtils.isEmpty(content)) {
             createAlertBow().show();
-        }else {
-
-            if (isNewFile) {
-                String path = currentFolderItemExplorer.getPath() + "/" + title;
-                System.out.println(path);
-                fileItemExplorer = new FileItemExplorer(fileItemExplorer.getType(), title, fileItemExplorer.getLayoutID(), path, 1);
-                new WriteFileAsyncTask(content).execute(fileItemExplorer);
+        } else {
+            URL url = null;
+            fileItemExplorer.setPath("datasheet/" + title);
+            fileItemExplorer.setName(title);
+            try {
+                url = new URL(serverInfo + "/" + fileItemExplorer.getPath());
+                new UploadCustomAsyncTask(content).execute(url);
+            } catch (MalformedURLException e) {
+                e.printStackTrace();
             }
-
-            if (!isNewFile && title.equals(fileItemExplorer.getName()) && !content.equals(oldContent)) {
-                fileItemExplorer.setVersion(fileItemExplorer.getVersion() + 1);
-                new WriteFileAsyncTask(content).execute(fileItemExplorer);
-            }
-
-            if (!isNewFile && !title.equals(fileItemExplorer.getName())) {
-                String path = fileItemExplorer.getPath().substring(0, fileItemExplorer.getPath().length() - fileItemExplorer.getName().length()) + title;
-                fileItemExplorer = new FileItemExplorer(fileItemExplorer.getType(), title, fileItemExplorer.getLayoutID(), path, fileItemExplorer.getVersion() + 1);
-                new WriteFileAsyncTask(content).execute(fileItemExplorer);
-            }
-        }
-
-        /*
-        FileItemExplorer item = fileItemExplorer;
-        //if title is not empty
-        if(!TextUtils.isEmpty(title)){
-            String path = null;
-            if(currentFolderItemExplorer!=null){
-                path = currentFolderItemExplorer.getPath() + "/" + title;
-            }
-            //if title is different than old title then new file
-            if(!isNewFile && !title.equals(item.getName())){
-                isNewFile = true;
-                path  = item.getPath().substring(0, item.getPath().length() - item.getName().length()) + title;
-            }
-            //if newFile
-            if (isNewFile) {
-
-                item = new FileItemExplorer(fileItemExplorer.getType(), title, fileItemExplorer.getLayoutID(), path, 1);
-                System.out.println("Write new File : "+item.getPath());
-                //TODO
-                /*
-                * WRITE FILE
-                * UPLOAD FILE
-                * FINISH
-                *
-                new WriteFileAsyncTask(content).execute(item);
-            }
-            //if not a new file
-            else{
-                if(TextUtils.isEmpty(content)){
-                    super.onBackPressed();
-                }
-                //if content is modified
-                if(!oldContent.equals(content)){
-                    item.setVersion(fileItemExplorer.getVersion() + 1);
-                    new WriteFileAsyncTask(content).execute(item);
-                    //TODO
-                    /*
-                    WRITE FILE
-                * GET VERSION AND
-                * UPLOAD FILE
-                * IF SERVER VERSION IS OLDER THAN CLIENT VERSION
-                * FINISH
-                *
-
-                }else{
-                    super.onBackPressed();
-                }
-            }
-
-        }*/
-
-    }
-
-    private class WriteFileAsyncTask extends AsyncTask<FileItemExplorer, Void, FileItemExplorer> {
-
-        private String content;
-
-        WriteFileAsyncTask(String content) {
-            this.content = content;
-        }
-
-        @Override
-        protected void onPreExecute() {
-            super.onPreExecute();
-            displayProgressBar(true);
-        }
-
-        @Override
-        protected FileItemExplorer doInBackground(FileItemExplorer... params) {
-            for (FileItemExplorer fileItemExplorer : params) {
-                try {
-                    JSONObject jsonObject = JsonUtil.createJsonFileUploadString(fileItemExplorer, content);
-                    saveContentInFile(fileItemExplorer.getPath(), jsonObject.toString());
-                    return fileItemExplorer;
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-            return null;
-        }
-
-        @Override
-        protected void onPostExecute(FileItemExplorer fileItemExplorer) {
-            super.onPostExecute(fileItemExplorer);
-            int code;
-            if (fileItemExplorer == null) {
-                code = RESULT_CANCELED;
-                setResult(code);
-            } else {
-                code = RESULT_OK;
-                Bundle bundle = new Bundle();
-                bundle.putParcelable("fileItemExplorer", fileItemExplorer);
-                Intent intent = new Intent();
-                intent.putExtras(bundle);
-                setResult(code, intent);
-            }
-            finish();
         }
     }
 
@@ -329,13 +327,21 @@ public class ModelActivity extends AppCompatActivity {
             super.onPostExecute(s);
             int code = RESULT_CANCELED;
             if (s) {
-                System.out.println("doubleok");
                 displayProgressBar(false);
                 code = RESULT_OK;
+                Bundle bundle = new Bundle();
+                bundle.putParcelable("fileItemExplorer", fileItemExplorer);
+                Intent intent = new Intent();
+                intent.putExtras(bundle);
+                setResult(code, intent);
+                finish();
+            } else {
+                setResult(code);
+                finish();
             }
             displayProgressBar(false);
             setResult(code);
-            finish();
+
         }
 
         @Override
@@ -350,13 +356,158 @@ public class ModelActivity extends AppCompatActivity {
         }
     }
 
-    private class GetVersionCustomAsyncTask extends AsyncTask<URL, Void, String> {
+    private void fillTableauWithGrid(Grid grid) throws JSONException {
+        titleEditText.setText(grid.getTitle());
+        int index = 0;
+        for (Row row : grid.getRows()) {
+            TextView textView = new TextView(this);
+            textView.setText(row.getName());
+            TableRow tableRow = new TableRow(this);
+            tableRow.setBackgroundResource(R.drawable.border);
+            tableRow.addView(textView);
 
-        private String content;
+            for (int i = 0; i < 40; i++) {
+                EditText editText = new EditText(this);
+                editText.setBackgroundResource(R.drawable.border);
+                if (row.getType().equals("int")) {
+                    editText.setInputType(InputType.TYPE_CLASS_NUMBER);
+                    editText.setGravity(Gravity.CENTER);
+                    editText.setOnFocusChangeListener(new View.OnFocusChangeListener() {
+                        @Override
+                        public void onFocusChange(View v, boolean hasFocus) {
+                            EditText text = (EditText) v;
+                            if (!hasFocus && !TextUtils.isEmpty(text.getText().toString())) {
+                                Integer note = Integer.parseInt(text.getText().toString());
+                                if (note < 0 || note > 20) {
+                                    text.setError("Invalid number");
+                                }
+                            }
+                        }
+                    });
+                }
+                if (row.getType().equals("float") && !row.getName().equals("note finale")) {
+                    editText.setInputType(InputType.TYPE_NUMBER_FLAG_DECIMAL);
+                    editText.setGravity(Gravity.CENTER);
+                    editText.setOnFocusChangeListener(new View.OnFocusChangeListener() {
+                        @Override
+                        public void onFocusChange(View v, boolean hasFocus) {
+                            EditText text = (EditText) v;
+                            if (!hasFocus && !TextUtils.isEmpty(text.getText().toString())) {
+                                try {
+                                    Float note = Float.parseFloat(text.getText().toString());
+                                    if (note < 0 || note > 1) {
+                                        text.setError("Invalid number");
+                                    }
+                                } catch (Exception e) {
+                                    text.setError("Invalid number");
+                                }
+                            }
+                        }
+                    });
+                }
+                if (row.getType().equals("float") && row.getName().equals("note finale")) {
+                    editText.setInputType(InputType.TYPE_NUMBER_FLAG_DECIMAL);
+                    editText.setGravity(Gravity.CENTER);
+                    editText.setOnFocusChangeListener(new View.OnFocusChangeListener() {
+                        @Override
+                        public void onFocusChange(View v, boolean hasFocus) {
+                            EditText text = (EditText) v;
+                            if (!hasFocus && !TextUtils.isEmpty(text.getText().toString())) {
+                                try {
+                                    Float note = Float.parseFloat(text.getText().toString());
+                                    if (note < 0 || note > 20) {
+                                        text.setError("Invalid number");
+                                    }
+                                } catch (Exception e) {
+                                    text.setError("Invalid number");
+                                }
+                            }
+                        }
+                    });
+                }
+                if (row.getType().equals("string")) {
+                    editText.setSingleLine(false);
+                    editText.setImeOptions(EditorInfo.IME_FLAG_NO_ENTER_ACTION);
+                }
+                editText.setWidth(200);
+                tableRow.addView(editText);
+            }
 
-        public GetVersionCustomAsyncTask(String content) {
-            this.content = content;
+            tableLayout.addView(tableRow);
+            index++;
         }
+
+        int size = grid.getRowValues().size();
+        for (int i = 0; i < size; i++) {
+            TableRow tableRow = (TableRow) tableLayout.getChildAt(i);
+            RowValue rowValue = grid.getRowValues().get(i);
+            for (Column column : rowValue.getArrayList()) {
+                View view = tableRow.getChildAt(column.getIndex());
+                if (view instanceof EditText) {
+                    EditText editText = (EditText) view;
+                    editText.setText(column.getValue());
+                }
+            }
+        }
+    }
+
+    private ArrayList<Row> getRowsModel(Element rootElement, String rowTag) {
+        NodeList rowsRoot = rootElement.getElementsByTagName(rowTag);
+        NodeList rows = rowsRoot.item(0).getChildNodes();
+        final int nbRacineNoeuds = rows.getLength();
+        ArrayList<Row> rowArrayList = new ArrayList<>();
+        for (int i = 0; i < nbRacineNoeuds; i++) {
+            Node item = rows.item(i);
+            String nodeName = item.getNodeName();
+            if (nodeName.equals("row")) {
+                String nom = item.getAttributes().getNamedItem("name").getNodeValue();
+                String type = item.getAttributes().getNamedItem("type").getNodeValue();
+                String value = item.getNodeValue();
+                rowArrayList.add(new Row(nom, type, value));
+            }
+        }
+        return rowArrayList;
+    }
+
+    private ArrayList<RowValue> getRowsValue(Element rootElement, String rowTag) {
+        ArrayList<RowValue> rowArrayList = new ArrayList<>();
+        NodeList rowsRoot = rootElement.getElementsByTagName(rowTag);
+        if (rowsRoot == null || rowsRoot.getLength() == 0) {
+            return rowArrayList;
+        }
+        NodeList rows = rowsRoot.item(0).getChildNodes();
+        if (rows == null) {
+            return rowArrayList;
+        }
+        final int nbRacineNoeuds = rows.getLength();
+        System.out.println("nbRacineNoeuds " + nbRacineNoeuds);
+        for (int i = 0; i < nbRacineNoeuds; i++) {
+            Node item = rows.item(i);
+            String nodeName = item.getNodeName();
+            if (nodeName.equals("row")) {
+                int index = Integer.parseInt(item.getAttributes().getNamedItem("index").getNodeValue());
+                if (item instanceof Element) {
+                    Element row = (Element) item;
+                    NodeList columns = row.getElementsByTagName("column");
+                    ArrayList<Column> arrayList = new ArrayList<>();
+                    int columnsRootCount = columns.getLength();
+                    for (int j = 0; j < columnsRootCount; j++) {
+                        Node column = columns.item(j);
+                        if (column instanceof Element) {
+                            Element element = (Element) column;
+                            int indexColumn = Integer.parseInt(element.getAttributes().getNamedItem("index").getNodeValue());
+                            String value = element.getTextContent();
+                            arrayList.add(new Column(value, indexColumn));
+                        }
+                    }
+                    rowArrayList.add(new RowValue(index, arrayList));
+                }
+            }
+        }
+        return rowArrayList;
+    }
+
+    private class DownloadCustomAsyncTask extends AsyncTask<URL, Void, Grid> {
 
         @Override
         protected void onPreExecute() {
@@ -365,7 +516,7 @@ public class ModelActivity extends AppCompatActivity {
         }
 
         @Override
-        protected String doInBackground(URL... params) {
+        protected Grid doInBackground(URL... params) {
             for (URL url : params) {
                 HttpURLConnection urlConnection = null;
                 try {
@@ -373,13 +524,20 @@ public class ModelActivity extends AppCompatActivity {
                     urlConnection.setConnectTimeout(3000); //set timeout to 3 seconds
                     urlConnection.setReadTimeout(3000);
                     urlConnection.setRequestProperty("Authorization", serverInfo.getAuthBase64());
-                    urlConnection.setRequestMethod("GET");
                     urlConnection.setDoInput(true);
                     // Starts the query
                     urlConnection.connect();
                     int responseCode = urlConnection.getResponseCode();
                     if (responseCode == 200) {
-                        return Util.getStringFromInputStream(urlConnection.getInputStream());
+                        String xml = Util.getStringFromInputStream(urlConnection.getInputStream());
+                        Document document = XmlUtil.getDomElement(xml);
+                        Element rootElement = document.getDocumentElement();
+                        NodeList nodeList = rootElement.getElementsByTagName("name");
+                        String title = "";
+                        if (!isNewFile) {
+                            title = nodeList.item(0).getTextContent();
+                        }
+                        return new Grid(getRowsModel(rootElement, "rows"), title, getRowsValue(rootElement, "columns"), document);
                     } else {
                         Snackbar.make(drawer, "Erreur de connexion : " + responseCode, Snackbar.LENGTH_SHORT).show();
                         return null;
@@ -395,20 +553,15 @@ public class ModelActivity extends AppCompatActivity {
         }
 
         @Override
-        protected void onPostExecute(String s) {
-            super.onPostExecute(s);
-            if (s == null) {
-            } else {
+        protected void onPostExecute(Grid grid) {
+            super.onPostExecute(grid);
+            if (grid != null) {
                 try {
-                    JSONObject obj = new JSONObject(s);
-                    int serverVersionFile = obj.getInt("version");
-                    if (serverVersionFile < fileItemExplorer.getVersion()) {
-                        uploadSpreadSheet(fileItemExplorer, content);
-                    }
+                    fillTableauWithGrid(grid);
                 } catch (JSONException e) {
-                    setResult(RESULT_CANCELED);
-                    finish();
+                    e.printStackTrace();
                 }
+                gridData = grid;
             }
             displayProgressBar(false);
         }
@@ -418,139 +571,6 @@ public class ModelActivity extends AppCompatActivity {
             super.onCancelled();
             displayProgressBar(false);
         }
-    }
-
-    private class CustomAsyncTask extends AsyncTask<URL, Void, String> {
-
-        @Override
-        protected void onPreExecute() {
-            super.onPreExecute();
-            displayProgressBar(true);
-        }
-
-        @Override
-        protected String doInBackground(URL... params) {
-            for (URL url : params) {
-                HttpURLConnection urlConnection = null;
-                try {
-                    urlConnection = (HttpURLConnection) url.openConnection();
-                    urlConnection.setConnectTimeout(3000); //set timeout to 3 seconds
-                    urlConnection.setReadTimeout(3000);
-                    urlConnection.setRequestProperty("Authorization", serverInfo.getAuthBase64());
-                    urlConnection.setRequestMethod("GET");
-                    urlConnection.setDoInput(true);
-                    // Starts the query
-                    urlConnection.connect();
-                    int responseCode = urlConnection.getResponseCode();
-                    if (responseCode == 200) {
-                        return Util.getStringFromInputStream(urlConnection.getInputStream());
-                    } else {
-                        Snackbar.make(drawer, "Erreur de connexion : " + responseCode, Snackbar.LENGTH_SHORT).show();
-                        return null;
-                    }
-                } catch (IOException e) {
-                    e.printStackTrace();
-                } finally {
-                    if (urlConnection != null)
-                        urlConnection.disconnect();
-                }
-            }
-            return null;
-        }
-
-        @Override
-        protected void onPostExecute(String s) {
-            super.onPostExecute(s);
-            if (s == null) {
-
-            } else {
-                try {
-                    JSONObject obj = new JSONObject(s);
-                    String content = JsonUtil.getContent(obj);
-                    editText.setText(content);
-                    oldContent = content;
-                } catch (JSONException e) {
-                    e.printStackTrace();
-                    Snackbar.make(drawer, "Erreur lors de la lecture du json.", Snackbar.LENGTH_SHORT).show();
-                }
-
-                /*try {
-                    getTempFile(fileItemExplorer,s);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }*/
-            }
-            displayProgressBar(false);
-        }
-
-        @Override
-        protected void onCancelled() {
-            super.onCancelled();
-            displayProgressBar(false);
-        }
-    }
-
-    private class CustomReadFileAsyncTask extends AsyncTask<File, Void, String> {
-
-        @Override
-        protected void onPreExecute() {
-            super.onPreExecute();
-            displayProgressBar(true);
-        }
-
-        @Override
-        protected String doInBackground(File... params) {
-            for (File file : params) {
-                try {
-                    String contentFile = readFile(file);
-                    return contentFile;
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-            return null;
-        }
-
-        @Override
-        protected void onPostExecute(String s) {
-            super.onPostExecute(s);
-            if (s == null) {
-                Snackbar.make(drawer, "Erreur lors de la lecture du fichier", Snackbar.LENGTH_SHORT).show();
-            } else {
-                JSONObject jsonObject = null;
-                try {
-                    jsonObject = new JSONObject(s);
-                    String content = jsonObject.getString("content");
-                    editText.setText(content);
-                    oldContent = content;
-                    versionTextView.setText("Version "+jsonObject.getInt("version"));
-                } catch (JSONException e) {
-                    e.printStackTrace();
-                }
-
-            }
-            displayProgressBar(false);
-        }
-
-        @Override
-        protected void onCancelled() {
-            super.onCancelled();
-            displayProgressBar(false);
-        }
-    }
-
-    public void saveContentInFile(String path, String content) throws IOException {
-        File file = new File(path);
-        File directory = new File(file.getParent());
-        if (!directory.exists()){
-            directory.mkdirs();
-        }
-        FileOutputStream fOut = new FileOutputStream(file);
-        OutputStreamWriter myOutWriter = new OutputStreamWriter(fOut);
-        myOutWriter.write(content);
-        myOutWriter.close();
-        fOut.flush();
-        fOut.close();
     }
 
     public static String readFile(File tempFile) throws IOException {
@@ -614,7 +634,7 @@ public class ModelActivity extends AppCompatActivity {
         URL url;
         try {
             url = new URL(urlPath);
-            new CustomAsyncTask().execute(url);
+            new DownloadCustomAsyncTask().execute(url);
         } catch (Exception e) {
             e.printStackTrace();
         }

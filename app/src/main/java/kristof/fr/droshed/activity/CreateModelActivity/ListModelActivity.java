@@ -37,7 +37,6 @@ public class ListModelActivity extends AppCompatActivity {
     private ProgressBar progressBar;
     private List<FileItemExplorer> list;
     private CustomModelPickerAdapter adapter;
-    private final String path = "model";
     private FolderItemExplorer currentFolderItemExplorer;
 
     @Override
@@ -62,7 +61,7 @@ public class ListModelActivity extends AppCompatActivity {
         list = new ArrayList<>();
         adapter = new CustomModelPickerAdapter(this, 0, list);
         listView.setAdapter(adapter);
-        getModelsList(path);
+        getModelsList(serverInfo.getModelPath());
     }
 
     private void startModelActivity(ServerInfo serverInfo,FileItemExplorer fileItemExplorer) {

@@ -1,6 +1,1 @@
-{
-	"path" : "model/model1/",
-	"version" : 1,
-	"name" : "model1",
-	"content" : "hahahahahahahahahahahaXML ma bite"
-}
+<document><path/><version/><name/><rows><row name="nom" type="string"/><row name="demonstration" type="int"/><row name="commentaire" type="string"/><row name="architecture" type="int"/><row name="documentation" type="int"/><row name="fonctionnalites" type="float"/><row name="remarque" type="string"/><row name="note finale" type="float"/></rows></document>

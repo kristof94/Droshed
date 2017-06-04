@@ -35,10 +35,20 @@ Now "http://example.com/project/data/lastversion" should return 43
 
 from functools import wraps
 from flask import Flask, request, make_response, Response, jsonify
+from lxml import etree
 
 import os, sys, base64, glob, json
 
 app = Flask(__name__)
+
+def getRoutePath(path):
+	return "/%s" % (path)
+
+modelPath = "model"
+dataPath = "datasheet"
+dataRoute = getRoutePath(dataPath)
+modelRoute = getRoutePath(modelPath)
+
 
 class Item(object):
     name = ""
@@ -73,7 +83,10 @@ def authenticated(f):
 @app.route("/login",methods=['GET'])
 @authenticated
 def checkAuthentifation():
-	return Response('Authentication Ok', 200, {'WWW-Authenticate': 'Basic realm="Login Required accepted"'})
+	data = {}
+	data['dataDir'] = dataPath
+	data['modelDir'] = modelPath
+	return Response(json.dumps(data), 200, {'WWW-Authenticate': 'Basic realm="Login Required accepted"'})
 
 #@app.route('/', methods=['PUT'], defaults={'path': ''})
 #@app.route('/<path:path>', methods=['PUT'])
@@ -85,19 +98,6 @@ def checkAuthentifation():
 @app.route('/<path:path>', methods=['GET'])
 @authenticated
 def getFileContent(path):
-	command = request.args.get('info')
-	if(command == 'version'):
-		with open(path) as json_data:
-    			d = json.load(json_data)
-			data = {}
-			data['version'] = d['version']
-			return app.response_class(
-	        	response=json.dumps(data),
-        		status=200,
-        		mimetype='application/json')
-
-
-
 	if(os.path.isfile(path)):
 		#jsonData = {'name': os.path.basename(path)}
 		with open(path, "r") as file:
@@ -112,19 +112,26 @@ def getFileContent(path):
 		return Response('Not found', 404, {'WWW-Authenticate': 'Bad Path."'})
 
 def getVersionFile(path):
-	json_data=open(path).read()
-	data = json.loads(json_data)
-	
+	tree = etree.parse(path)
+	for version in tree.xpath("/document/version"):
+		return version.text
 
-@app.route("/model",methods=['GET'])
+@app.route("/<folder>/<sheetname>/version")
+@authenticated
+def getDocumentVersion(folder,sheetname):
+	path = "%s/%s" % (folder,sheetname)
+	print(path)
+	return getVersionFile(path)
+
+@app.route(modelRoute,methods=['GET'])
 @authenticated
 def getlistmodel():
-	return getResponseWithJson("model")
+	return getResponseWithJson(modelPath)
 
-@app.route("/data",methods=['GET'])
+@app.route(dataRoute,methods=['GET'])
 @authenticated
 def getlistdata():
-	return getResponseWithJson("datasheet")
+	return getResponseWithJson(dataPath)
 
 def getResponseWithJson(nameFolder):
 	return app.response_class(
@@ -159,7 +166,7 @@ def _getlastversion(sheetname, username):
 	except:
 		return -1
 		
-@app.route("/<sheetname>/data/lastversion")
+@app.route("/<sheetname>/version")
 @authenticated
 def getlastversion(sheetname):
 	lv = _getlastversion(sheetname, request.authorization.username)
@@ -167,15 +174,6 @@ def getlastversion(sheetname):
 		return str(lv)
 	else:
 		return "no version available", 404
-		
-@app.route("/<sheetname>/data/<int:version>")
-@authenticated
-def getversion(sheetname, version):
-	try:
-		with open(os.path.join(app.config["datadir"], sheetname, request.authorization.username, str(version))) as f:
-			return f.read()
-	except:
-		return "unavailable version", 404
 		
 @app.route("/<sheetname>/data/<int:version>", methods=["PUT"])
 @authenticated
@@ -196,10 +194,10 @@ def putversion(sheetname, version):
 @app.route('/<path:path>', methods=['PUT'])
 @authenticated
 def getUploadFile(path):
-	j = json.loads(request.data)
-	fileName = j['path']
-	if fileName.startswith('data') or fileName.startswith('model'):
-		writeJsonStringToFile(fileName,j)
+	print(path)
+	fileName = path
+	if fileName.startswith(dataPath) or fileName.startswith(modelPath):
+		writeJsonStringToFile(fileName,request.data)
 		return "upload OK", 200
 	else:
 		return "upload problem", 403
@@ -211,7 +209,7 @@ def writeStringToFile(fileName,content):
 
 def writeJsonStringToFile(fileName,jj):
 	file = open(fileName,"w")	 
-	file.write(json.dumps(jj, indent=4, sort_keys=True))
+	file.write(jj)
 	file.close()
 
 if __name__ == "__main__":

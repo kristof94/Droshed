@@ -17,25 +17,38 @@ public class ServerInfo implements Parcelable {
 
     private String authBase64;
     private String address;
-    private ArrayList<ItemExplorer> datalist = new ArrayList<>();
+    private String dataPath;
 
-    public ServerInfo(String address, String credentials) {
+    public String getDataPath() {
+        return dataPath;
+    }
+
+    public String getModelPath() {
+        return modelPath;
+    }
+
+    private String modelPath;
+
+    public ServerInfo(String address, String credentials,String dataPath,String modelPath) {
         this.authBase64 = credentials;
         this.address = address;
+        this.dataPath = dataPath;
+        this.modelPath = modelPath;
     }
 
     protected ServerInfo(Parcel in) {
         authBase64 = in.readString();
         address = in.readString();
-        ArrayList<ItemExplorer> list = new ArrayList<>();
-        in.readList(list,ItemExplorer.class.getClassLoader());
+        dataPath = in.readString();
+        modelPath = in.readString();
     }
 
     @Override
     public void writeToParcel(Parcel dest, int flags) {
         dest.writeString(authBase64);
         dest.writeString(address);
-        dest.writeList(datalist);
+        dest.writeString(dataPath);
+        dest.writeString(modelPath);
     }
 
     @Override
@@ -54,24 +67,6 @@ public class ServerInfo implements Parcelable {
             return new ServerInfo[size];
         }
     };
-
-    public ArrayList<ItemExplorer> getDatalist() {
-        return datalist;
-    }
-
-    public void setDatalist(ArrayList<ItemExplorer> datalist) {
-        this.datalist = datalist;
-    }
-
-    public ArrayList<ItemExplorer> getModelist() {
-        return modelist;
-    }
-
-    public void setModelist(ArrayList<ItemExplorer> modelist) {
-        this.modelist = modelist;
-    }
-
-    private ArrayList<ItemExplorer> modelist = new ArrayList<>();
 
     public String getAuthBase64() {
         return authBase64;
